@@ -1,0 +1,10 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+gunicorn
+psycopg2-binary
+python-dotenv
+werkzeug
+itsdangerous
+Flask-Mail
+Flask-Limiter

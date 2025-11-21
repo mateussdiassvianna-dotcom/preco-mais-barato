@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Produtos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.12.0/dist/cdn.min.js"></script>
+  <style>
+    main {
+      display: grid;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 641px) and (max-width: 1024px) {
+      main {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width: 1025px) {
+      main {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+
+    .tooltip-dica {
+      color: #16a34a;
+      font-size: 0.9rem;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    /* Estilo lista */
+    .lista-produtos {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .lista-produtos th,
+    .lista-produtos td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    .lista-produtos th {
+      background: #f3f4f6;
+      font-weight: 600;
+    }
+
+    .lista-acoes button {
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 font-sans min-h-screen" x-data="produtoApp()" x-init="init()">
+
+  <!-- Header -->
+  <header
+    class="flex justify-between items-center p-6 bg-white shadow-lg sticky top-0 z-50 rounded-b-lg flex-wrap gap-3">
+    <h1 class="text-3xl font-extrabold text-gray-800 flex items-center gap-2 w-full sm:w-auto">
+      📦 Meus Produtos
+
+    </h1>
+    <div class="flex flex-wrap gap-3 justify-end w-full sm:w-auto items-center">
+      <button @click="abrirForm()"
+        class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-md w-full sm:w-auto">+
+        Adicionar</button>
+      <button @click="mostrarModalImportar=true"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-md w-full sm:w-auto">📥
+        Importar/Atualizar</button>
+      <input type="file" x-ref="fileInput"
+        @change="tipoAcao==='importar' ? importarArquivo($event) : atualizarProdutos($event)"
+        accept=".csv,.txt,.xls,.xlsx" class="hidden">
+      <a href="{{ url_for('comerciante.dashboard_comerciante') }}"
+        class="bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl shadow-md w-full sm:w-auto text-center">
+        ⬅ Voltar ao Perfil
+      </a>
+      <button @click="modoLista = !modoLista"
+        class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl shadow-md w-full sm:w-auto">
+        <span x-text="modoLista ? '🔳 Grid' : '📋 Lista'"></span>
+      </button>
+      <button @click="modoExclusao = !modoExclusao; if(!modoExclusao) selecionados=[]"
+        class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl shadow-md w-full sm:w-auto">
+        <span x-text="modoExclusao ? 'Cancelar exclusão' : '🗑️ Apagar'"></span>
+      </button>
+      <button x-show="modoExclusao"
+        @click="marcarTodos=!marcarTodos; if(marcarTodos){ selecionados = filtrados.map(p=>p.id);} else {selecionados=[];}"
+        class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-xl shadow-md w-full sm:w-auto">
+        <span x-text="marcarTodos ? '⬜ Desmarcar todos' : '🟩 Marcar todos'"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Modal Importar/Atualizar -->
+  <div x-show="mostrarModalImportar"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-4 z-50" x-transition.opacity>
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 relative shadow-2xl border border-gray-200">
+      <button @click="mostrarModalImportar=false"
+        class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl transition">✖</button>
+      <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">📥 Importar ou Atualizar Produtos</h2>
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-2 p-4 border rounded-lg hover:shadow-md cursor-pointer"
+          @click="tipoAcao='importar'; $refs.fileInput.click(); mostrarModalImportar=false">
+          <span class="font-semibold text-gray-800">Importar Produtos</span>
+          <span class="text-gray-500 text-sm">Carregue um arquivo com novos produtos para adicionar à plataforma.</span>
+        </div>
+
+        <div class="flex flex-col gap-2 p-4 border rounded-lg hover:shadow-md cursor-pointer"
+          @click="tipoAcao='atualizar'; $refs.fileInput.click(); mostrarModalImportar=false">
+          <span class="font-semibold text-gray-800">Atualizar Produtos</span>
+          <span class="text-gray-500 text-sm">Atualize os dados de produtos existentes com informações novas de um
+            arquivo.</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <section class="p-4 flex flex-wrap items-center bg-white shadow-md rounded-xl mt-4 mx-4 gap-4 justify-between">
+
+    <!-- Parte esquerda: select, busca e checkbox -->
+    <div class="flex items-center gap-4 flex-wrap">
+      <select x-model="ordenacao" @change="pagina=1"
+        class="border rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-400">
+        <option value="recente">📅 Mais recentes</option>
+        <option value="preco_asc">💰 Preço ↑</option>
+        <option value="preco_desc">💰 Preço ↓</option>
+        <option value="nome">🔤 Nome</option>
+      </select>
+
+      <input type="text" placeholder="Buscar produto..." x-model="busca" @input="pagina = 1"
+        class="border rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-400" />
+
+      <!-- Checkbox Apenas produtos com aviso -->
+      <label class="flex items-center gap-2 text-sm cursor-pointer select-none flex-shrink-0">
+        <input type="checkbox" x-model="filtroAviso" @change="pagina=1" class="h-4 w-4">
+        ⚠️ Apenas produtos com aviso
+      </label>
+    </div>
+
+    <!-- Parte direita: aviso fixo (duas linhas) e total -->
+    <div class="flex items-center gap-4 flex-nowrap">
+
+      <!-- Aviso fixo (duas linhas) -->
+      <div class="text-sm text-orange-600 font-medium flex-1 leading-snug">
+        ⚠️ Sempre que importar produtos ou alterar informações e parecer que não foram aplicadas,<br>
+        pressione F5 para atualizar a página.
+      </div>
+
+      <!-- Total -->
+      <span class="text-gray-500 font-medium text-center flex-shrink-0">
+        Total: <span x-text="filtrados.length"></span>
+      </span>
+
+    </div>
+
+    <!-- Selecionados (modo exclusão) -->
+    <span x-show="modoExclusao" class="text-red-600 font-bold mt-2 sm:mt-0 text-center"
+      x-text="selecionados.length + ' selecionado(s)'"></span>
+  </section>
+
+
+
+  <!-- Produtos -->
+  <main class="p-4" x-show="!modoLista">
+    <template x-for="produto in filtrados" :key="produto.id">
+      <div
+        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl hover:scale-105 transition-transform flex flex-col border border-gray-100 relative">
+        <div x-show="produtoFaltando(produto)"
+          class="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded shadow">⚠️ Informações
+          faltando</div>
+        <input type="checkbox" x-show="modoExclusao" class="absolute top-2 right-2 w-5 h-5" :value="produto.id"
+          x-model="selecionados">
+        <img :src="produto.imagem || '/static/img/sem-imagem.png'" :alt="produto.nome || 'Sem imagem'"
+          class="w-full h-32 sm:h-40 object-cover border-b">
+        <div class="p-2 flex-1 flex flex-col">
+          <h2 class="font-bold text-sm sm:text-base" x-text="produto.nome || 'Sem nome'"></h2>
+          <p class="text-gray-500 text-xs sm:text-sm" x-text="produto.marca || 'Sem marca'"></p>
+          <p class="mt-1 text-green-600 font-bold text-sm sm:text-base" x-text="formatarPreco(produto.preco)"></p>
+          <p class="text-gray-400 text-xs sm:text-sm italic" x-text="produto.categoria || 'Sem categoria'"></p>
+          <p class="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2" x-text="produto.descricao || 'Sem descrição'">
+          </p>
+          <div class="mt-auto flex gap-1 pt-2">
+            <button @click="abrirForm(produto)"
+              class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-1 sm:py-2 rounded">✏️</button>
+            <button @click="deletar(produto.id)"
+              class="flex-1 bg-red-500 hover:bg-red-600 text-white py-1 sm:py-2 rounded">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </template>
+  </main>
+
+  <!-- Lista -->
+  <main class="p-4 space-y-2" x-show="modoLista">
+    <template x-for="produto in filtrados" :key="produto.id">
+      <div
+        class="bg-white rounded-lg shadow-md p-4 flex justify-between items-center hover:shadow-xl transition cursor-pointer relative">
+        <input type="checkbox" x-show="modoExclusao" class="absolute top-2 left-2 w-5 h-5" :value="produto.id"
+          x-model="selecionados">
+        <div class="flex flex-col">
+          <span class="font-semibold text-gray-800" x-text="produto.nome || 'Sem nome'"></span>
+          <span class="text-green-600 font-bold" x-text="formatarPreco(produto.preco)"></span>
+        </div>
+        <div class="flex gap-2">
+          <button @click="abrirForm(produto)"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">📝</button>
+          <button @click="deletar(produto.id)"
+            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">🗑️</button>
+          <button @click="abrirFicha(produto)"
+            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">ℹ️</button>
+        </div>
+      </div>
+    </template>
+  </main>
+
+
+  <!-- Botão confirmar exclusão -->
+  <div class="fixed bottom-4 right-4" x-show="modoExclusao && selecionados.length > 0">
+    <button @click="confirmarExclusao()" class="bg-red-700 hover:bg-red-800 text-white px-6 py-3 rounded-xl shadow-md">
+      🗑️ Confirmar exclusão
+    </button>
+  </div>
+
+  <!-- Modal Ficha -->
+  <div x-show="mostrarFicha"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-4 z-50" x-transition.opacity>
+    <div
+      class="bg-white rounded-3xl w-full max-w-3xl p-8 relative shadow-2xl border border-gray-200 overflow-y-auto max-h-[95vh]">
+      <button @click="fecharFicha()"
+        class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl transition">✖</button>
+      <h2 class="text-3xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+        ℹ️ <span x-text="ficha.nome || 'Produto'"></span>
+      </h2>
+      <div class="flex flex-col md:flex-row gap-6">
+        <img :src="form.preview || form.imagem || '/static/img/sem-imagem.png'" ...>
+        <div class="flex-1 flex flex-col gap-2">
+          <p><strong>Marca:</strong> <span x-text="ficha.marca || 'Sem marca'"></span></p>
+          <p><strong>Preço:</strong> <span class="text-green-600 font-bold" x-text="formatarPreco(ficha.preco)"></span>
+          </p>
+          <p><strong>Categoria:</strong> <span x-text="ficha.categoria || 'Sem categoria'"></span></p>
+          <p><strong>Descrição:</strong></p>
+          <p class="text-gray-700" x-text="ficha.descricao || 'Sem descrição'"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paginação -->
+  <div class="flex justify-center items-center gap-2 my-6 flex-wrap">
+    <button @click="pagina = Math.max(1, pagina - 1)" :disabled="pagina === 1"
+      class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition">
+      ⬅️ Anterior
+    </button>
+
+    <template x-for="n in totalPaginas" :key="n">
+      <button @click="pagina = n" class="px-4 py-2 rounded-lg transition"
+        :class="pagina === n ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'">
+        <span x-text="n"></span>
+      </button>
+    </template>
+
+    <button @click="pagina = Math.min(totalPaginas, pagina + 1)" :disabled="pagina === totalPaginas"
+      class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition">
+      Próxima ➡️
+    </button>
+  </div>
+
+  <!-- Modal Form -->
+  <div x-show="mostrarForm" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-4 z-50"
+    x-transition.opacity>
+    <div
+      class="bg-white rounded-3xl w-full max-w-3xl p-8 relative shadow-2xl border border-green-100 overflow-y-auto max-h-[95vh]">
+      <button @click="fecharForm()"
+        class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl transition">✖</button>
+      <h2 class="text-3xl font-bold mb-8 text-green-700 flex items-center gap-2">
+        <span x-text="form.id ? '✏️ Editar Produto' : '🛍️ Novo Produto'"></span>
+      </h2>
+
+      <form @submit.prevent="salvar()" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <template x-for="(campo, index) in campos" :key="index">
+          <div :class="campo.colspan ? 'md:col-span-2' : ''">
+            <label class="block text-lg font-semibold mb-2 text-gray-800" x-text="campo.label"></label>
+
+            <!-- Campo de texto (nome, marca, etc) -->
+            <template x-if="campo.tipo === 'text'">
+              <input type="text" x-model="form[campo.modelo]" @blur="campo.modelo === 'preco' && formatarPrecoFinal()"
+                inputmode="decimal" autocomplete="off"
+                class="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500"
+                :placeholder="campo.placeholder" :required="campo.required">
+            </template>
+
+            <!-- Textarea -->
+            <template x-if="campo.tipo === 'textarea'">
+              <textarea x-model="form[campo.modelo]" rows="4"
+                class="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-400"
+                :placeholder="campo.placeholder"></textarea>
+            </template>
+
+            <!-- Select -->
+            <template x-if="campo.tipo === 'select'">
+              <select x-model="form[campo.modelo]"
+                class="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400">
+                <option value="">Selecione...</option>
+                <option>Alimentos</option>
+                <option>Bebidas</option>
+                <option>Farmácia</option>
+                <option>Higiene Pessoal</option>
+                <option>Limpeza</option>
+                <option>Eletrônicos</option>
+                <option>Roupas</option>
+                <option>Outros</option>
+              </select>
+            </template>
+
+            <!-- Campo de arquivo -->
+            <template x-if="campo.tipo === 'file'">
+              <input type="file" @change="handleFile($event)" accept="image/*"
+                class="w-full border p-3 rounded-lg shadow-sm bg-gray-50">
+            </template>
+
+            <small class="tooltip-dica mt-1 block" x-text="campo.dicaAtual"></small>
+          </div>
+        </template>
+
+        <div class="md:col-span-2 flex justify-end gap-4 mt-6 flex-wrap">
+          <button type="button" @click="fecharForm()"
+            class="px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition shadow-md">Cancelar</button>
+          <button type="submit"
+            class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition">Salvar
+            Produto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+  <div x-show="alerta" x-text="alerta"
+    class="fixed bottom-4 right-4 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold"
+    x-transition></div>
+
+  <!-- LOADING FULLSCREEN -->
+  <div x-show="carregando"
+    class="fixed inset-0 bg-black/70 flex flex-col justify-center items-center z-[9999] text-white"
+    x-transition.opacity>
+    <div class="bg-gray-900 p-6 rounded-2xl shadow-2xl text-center w-80">
+      <h2 class="text-xl font-semibold mb-4">⏳ Importando produtos...</h2>
+      <div class="w-full bg-gray-700 h-4 rounded-full overflow-hidden mb-3">
+        <div class="bg-green-500 h-full transition-all duration-300" :style="`width: ${progresso}%;`"></div>
+      </div>
+      <p x-text="progresso + '%'"></p>
+    </div>
+  </div>
+
+
+
+  <script>
+    function produtoApp() {
+      const FOTO_PADRAO = "/static/img/sem-imagem.png";
+      return {
+        // --------- DADOS PRINCIPAIS (mantive seus nomes) ---------
+        produtos: [],
+        pagina: 1,
+        itensPorPagina: 50, // padrão para carregar por chunk (ajuste se quiser)
+        totalPaginas: 0, // importante: usamos scroll infinito, mantenho 0 para esconder paginação
+        ordenacao: "recente", // valores usados na UI (mapeados para ordenar_por)
+        ordenacaoOrdem: "desc",
+        busca: "",
+        mostrarForm: false,
+        mostrarFicha: false,
+        mostrarModalImportar: false,
+        ficha: {},
+        alerta: "",
+        filtroAviso: false,
+        carregando: false,
+        progresso: 0,
+        modoLista: false,
+        modoExclusao: false,
+        marcarTodos: false,
+        selecionados: [],
+        tipoAcao: "importar",
+        form: { id: null, nome: "", marca: "", preco: "", categoria: "", descricao: "", imagem: FOTO_PADRAO },
+        campos: [
+          {
+            label: "Nome do produto", modelo: "nome", tipo: "text", placeholder: "Ex: Coca-Cola 2L", required: true,
+            dicas: ["Use nomes curtos", "Evite tudo em maiúsculo", "Inclua o tamanho", "Use nome claro", "Evite abreviações", "Use nomes fáceis de ler"], dicaAtual: ""
+          },
+          {
+            label: "Marca", modelo: "marca", tipo: "text", placeholder: "Ex: Nestlé",
+            dicas: ["Marcas conhecidas vendem mais", "Evite deixar em branco", "Pesquise o nome certo", "Revise antes de salvar", "Não use apelidos", "Se não tiver, diga 'Genérico'"], dicaAtual: ""
+          },
+          {
+            label: "Preço", modelo: "preco", tipo: "text", placeholder: "Ex: 12,50", required: true,
+            dicas: ["Digite apenas números", "Sempre com vírgula", "Exemplo: 10,99", "Evite usar ponto", "Use 0,00 se não souber", "Verifique antes de salvar"], dicaAtual: ""
+          },
+          {
+            label: "Categoria", modelo: "categoria", tipo: "select",
+            dicas: ["Escolha a certa", "Ajuda na busca", "Evite 'Outros' sempre", "Classifique corretamente", "Pense no cliente", "Use coerência"], dicaAtual: ""
+          },
+          {
+            label: "Descrição", modelo: "descricao", tipo: "textarea", colspan: true,
+            dicas: ["Fale o essencial", "Evite erros", "Inclua benefícios", "Use frases curtas", "Deixe fácil de entender", "Fale o diferencial"], dicaAtual: ""
+          },
+          {
+            label: "Imagem", modelo: "imagem", tipo: "file", colspan: true,
+            dicas: ["Use boa iluminação", "Evite fundo escuro", "Mostre o produto inteiro", "Use boa resolução", "Evite fotos tremidas", "Prefira fotos reais"], dicaAtual: ""
+          }
+        ],
+
+        // --------- ESTADO DO SCROLL / CACHE ----------
+        offset: 0,
+        limiteServico: 50, // quantos pedir ao backend por requisição (deve ser igual a itensPorPagina)
+        hasMore: true,
+        cacheTtlMs: 1000 * 60 * 60 * 24, // 24h por padrão (pode ajustar)
+        searchDebounceMs: 400,
+        _searchTimeout: null,
+        _scrollHandler: null,
+
+        // --------- INICIALIZAÇÃO ---------
+        init() {
+          this.limiteServico = this.itensPorPagina;
+          setInterval(() => {
+            this.campos.forEach(campo => {
+              const i = campo.dicas.indexOf(campo.dicaAtual);
+              campo.dicaAtual = campo.dicas[(i + 1) % campo.dicas.length] || campo.dicas[0];
+            });
+          }, 6000);
+          this.campos.forEach(c => c.dicaAtual = c.dicas[0]);
+
+          // Carrega do cache (se existir) para mostrar algo rápido
+          this._loadFromCache();
+
+          // reset e carregar a primeira fatia ao iniciar (garante estado limpo)
+          this.resetAndLoad();
+
+          // Observadores para busca/ordenacao/aviso: ao mudar, resetamos a lista
+          if (this.$watch) {
+            this.$watch('busca', (v) => {
+              clearTimeout(this._searchTimeout);
+              this._searchTimeout = setTimeout(() => this.resetAndLoad(), this.searchDebounceMs);
+            });
+            this.$watch('ordenacao', () => this.resetAndLoad());
+            this.$watch('filtroAviso', () => this.resetAndLoad());
+          }
+
+          // Scroll infinito: aproximação ao fim da página
+          this._scrollHandler = () => {
+            if (this.carregando || !this.hasMore) return;
+            const distanceFromBottom = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+            if (distanceFromBottom < 900) { // quando faltar ~900px começa a carregar
+              this.loadMore();
+            }
+          };
+          window.addEventListener('scroll', this._scrollHandler);
+        },
+
+        // --------- UTILIDADES DE MAPEO (ordenacao UI -> backend) ----------
+        mapOrdenacao() {
+          if (this.ordenacao === 'recente') return { ordenar_por: 'criado_em', ordem: 'desc' };
+          if (this.ordenacao === 'preco_asc') return { ordenar_por: 'preco', ordem: 'asc' };
+          if (this.ordenacao === 'preco_desc') return { ordenar_por: 'preco', ordem: 'desc' };
+          if (this.ordenacao === 'nome') return { ordenar_por: 'nome', ordem: 'asc' };
+          return { ordenar_por: 'criado_em', ordem: 'desc' };
+        },
+
+        // --------- CACHE LOCAL (localStorage) ----------
+        cacheKey() {
+          const o = this.mapOrdenacao();
+          const key = `produtos_cache::b:${this.busca || ''}::o:${o.ordenar_por}::ord:${o.ordem}::a:${this.filtroAviso ? 1 : 0}`;
+          return key;
+        },
+
+        _loadFromCache() {
+          try {
+            const key = this.cacheKey();
+            const raw = localStorage.getItem(key);
+            if (!raw) return;
+            const obj = JSON.parse(raw);
+            if (obj && obj.ts && (Date.now() - obj.ts) < this.cacheTtlMs && Array.isArray(obj.produtos) && obj.produtos.length) {
+              // carrega só um pedaço inicial (para exibir rápido)
+              this.produtos = obj.produtos.slice(0, this.itensPorPagina);
+              this.offset = this.produtos.length;
+              this.hasMore = true; // assume que servidor pode ter mais
+              this.atualizarFiltro(); // <<< importante: atualiza 'filtrados' para render
+            }
+          } catch (e) {
+            console.warn('Erro ao ler cache produtos', e);
+          }
+        },
+
+        _saveCache() {
+          try {
+            const key = this.cacheKey();
+            const existingRaw = localStorage.getItem(key);
+            let existing = { produtos: [], ts: Date.now() };
+            if (existingRaw) {
+              try { existing = JSON.parse(existingRaw); } catch (e) { existing = { produtos: [], ts: Date.now() }; }
+            }
+            const map = new Map();
+            (existing.produtos || []).forEach(p => map.set(p.id, p));
+            (this.produtos || []).forEach(p => map.set(p.id, p));
+            const merged = Array.from(map.values());
+            const toSave = { produtos: merged, ts: Date.now() };
+            localStorage.setItem(key, JSON.stringify(toSave));
+          } catch (e) {
+            console.warn('Erro ao salvar cache produtos', e);
+          }
+        },
+
+        _invalidateCache() {
+          try {
+            const key = this.cacheKey();
+            localStorage.removeItem(key);
+          } catch (e) { /* ignore */ }
+        },
+
+        // --------- RESET (nova busca / ordenação / filtro) ----------
+        resetAndLoad() {
+          this.offset = 0;
+          this.produtos = [];
+          this.hasMore = true;
+          this.totalPaginas = 0; // garantir que paginação não apareça
+          this._invalidateCache();
+          // carrega a primeira fatia
+          this.loadChunk(0).then(() => {
+            // atualiza filtros locais
+            this.atualizarFiltro();
+          });
+        },
+
+        // --------- LISTAR / CARREGAR (integração com rota offset/limite) ----------
+        listarProdutos() {
+          return this.loadChunk(this.offset);
+        },
+
+        loadMore() {
+          if (this.carregando || !this.hasMore) return Promise.resolve();
+          return this.loadChunk(this.offset);
+        },
+
+        async loadChunk(offsetParam) {
+          try {
+            this.carregando = true;
+            const offset = typeof offsetParam === 'number' ? offsetParam : this.offset;
+            const limite = this.limiteServico || this.itensPorPagina;
+            const ordObj = this.mapOrdenacao();
+
+            const qs = new URLSearchParams();
+            qs.set('offset', String(offset));
+            qs.set('limite', String(limite));
+            if (this.busca) qs.set('busca', this.busca);
+            if (this.filtroAviso) qs.set('aviso', '1');
+            if (ordObj.ordenar_por) qs.set('ordenar_por', ordObj.ordenar_por);
+            if (ordObj.ordem) qs.set('ordem', ordObj.ordem);
+
+            const url = `/comerciante/api/produtos?${qs.toString()}`;
+
+            const res = await fetch(url, { cache: 'no-store' });
+            const data = await res.json();
+
+            if (!data || !Array.isArray(data.produtos)) {
+              this.carregando = false;
+              return [];
+            }
+
+            const novos = (data.produtos || []).map(p => ({ ...p, imagem: p.imagem || FOTO_PADRAO }));
+
+            if (offset === 0) {
+              // substitui a lista pelos primeiros resultados
+              this.produtos = novos;
+            } else {
+              // append sem duplicar: usa id
+              const map = new Map(this.produtos.map(p => [p.id, p]));
+              novos.forEach(p => { if (!map.has(p.id)) { this.produtos.push(p); map.set(p.id, p); } });
+            }
+
+            // atualiza offset (quantos já carregados)
+            this.offset = this.produtos.length;
+
+            // define hasMore
+            if ((data.qtd_retorno || novos.length) < limite) {
+              this.hasMore = false;
+            } else {
+              this.hasMore = true;
+            }
+
+            // garantir que a paginação não apareça
+            this.totalPaginas = 0;
+
+            // grava cache incremental
+            this._saveCache();
+
+            // atualiza 'filtrados' para que os templates que iteram sobre filtrados mostrem os produtos
+            this.atualizarFiltro();
+
+            return novos;
+          } catch (e) {
+            console.error('Erro ao carregar produtos', e);
+            this.hasMore = false;
+            return [];
+          } finally {
+            this.carregando = false;
+          }
+        },
+
+        // --------- RENDER / FILTROS LOCAIS MANTIDOS ----------
+        produtoFaltando(p) { return !p.nome || !p.preco || !p.marca || !p.categoria || !p.descricao; },
+
+        filtrados: [],
+
+        atualizarFiltro() {
+          // A busca/ordenacao principal é feita no servidor.
+          // Aqui apenas espelhamos os produtos carregados para o 'filtrados' usado pelo template.
+          let lista = [...this.produtos];
+          // filtro local leve (apenas se usuário digitar algo rápido entre requisições)
+          if (this.busca) {
+            const termo = this.busca.toLowerCase();
+            lista = lista.filter(p =>
+              (p.nome && p.nome.toLowerCase().includes(termo)) ||
+              (p.categoria && p.categoria.toLowerCase().includes(termo))
+            );
+          }
+          // ordenação local leve (fallback)
+          if (this.ordenacao === 'nome') lista.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+          if (this.ordenacao === 'preco_asc') lista.sort((a, b) => parseFloat(a.preco || 0) - parseFloat(b.preco || 0));
+          if (this.ordenacao === 'preco_desc') lista.sort((a, b) => parseFloat(b.preco || 0) - parseFloat(a.preco || 0));
+          this.filtrados = lista;
+        },
+
+        get paginaAtual() {
+          // Compatibilidade com seu código que pode usar paginaAtual; aqui retornamos os produtos visíveis (já que usamos scroll)
+          const itens = this.modoLista ? 50 : this.itensPorPagina;
+          return this.produtos.slice(0, itens);
+        },
+
+        // --------- ABRIR / FECHAR MODAIS (mantive) ----------
+        abrirForm(produto = null) {
+          this.form = produto ? { ...produto, imagem: produto.imagem || FOTO_PADRAO } : { id: null, nome: "", marca: "", preco: "", categoria: "", descricao: "", imagem: FOTO_PADRAO };
+          this.mostrarForm = true;
+        },
+        fecharForm() { this.mostrarForm = false; },
+
+        abrirFicha(produto) {
+          this.ficha = produto ? { ...produto, imagem: produto.imagem || FOTO_PADRAO } : {};
+          this.mostrarFicha = true;
+        },
+        fecharFicha() { this.mostrarFicha = false; this.ficha = {}; },
+
+        // --------- UPLOAD IMAGEM (mantive) ----------
+        async handleFile(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          this.form.preview = URL.createObjectURL(file);
+
+          const formData = new FormData();
+          formData.append("file", file); // ← CORREÇÃO AQUI
+
+          try {
+            const res = await fetch('/comerciante/api/upload', {
+              method: 'POST',
+              body: formData
+            });
+
+            const data = await res.json();
+            if (data.url) {
+              this.form.imagem = data.url;
+            } else {
+              alert('Falha ao enviar imagem.');
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Erro ao enviar imagem.');
+          }
+        },
+
+
+        // --------- FORMATAR PREÇO (mantive) ----------
+        formatarPrecoFinal() {
+          let s = String(this.form.preco || "").trim();
+          s = s.replace(",", ".");
+          s = s.replace(/[^\d.]/g, "");
+          const valor = parseFloat(s);
+          if (isNaN(valor)) { this.form.preco = ""; return; }
+          this.form.preco = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor);
+        },
+
+        formatarPreco(valor) { if (!valor) return "R$ 0,00"; const n = parseFloat(valor); return isNaN(n) ? "R$ 0,00" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); },
+
+        // --------- SALVAR / ATUALIZAR PRODUTO (mantive lógica, adaptei cache) ----------
+        salvar() {
+          if (!this.form.nome || !this.form.preco) {
+            this.alerta = "⚠️ Nome e preço obrigatórios";
+            setTimeout(() => this.alerta = "", 3000);
+            return;
+          }
+
+          if (!this.form.imagem) this.form.imagem = FOTO_PADRAO;
+
+          // converte preço para número
+          this.form.preco = parseFloat(String(this.form.preco).replace(",", "."));
+
+          let url = '/comerciante/api/produtos';
+          let metodo = 'POST';
+          if (this.form.id) {
+            url += `/${this.form.id}`;
+            metodo = 'PUT';
+          }
+
+          fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.form)
+          })
+            .then(r => {
+              if (!r.ok) throw new Error();
+              return r.json();
+            })
+            .then((novoProduto) => {
+              this.alerta = "✅ Produto salvo!";
+              this.fecharForm();
+
+              // usa sempre os dados retornados do servidor
+              const produtoFinal = {
+                ...novoProduto,
+                imagem: novoProduto.imagem || this.form.imagem || FOTO_PADRAO
+              };
+
+              if (this.form.id) {
+                const idx = this.produtos.findIndex(p => p.id === this.form.id);
+                if (idx !== -1) this.produtos[idx] = produtoFinal;
+                else this.produtos.unshift(produtoFinal);
+              } else {
+                this.produtos.unshift(produtoFinal);
+              }
+
+              this.offset = this.produtos.length;
+              this._saveCache();
+              this.atualizarFiltro();
+              setTimeout(() => this.alerta = "", 3000);
+            })
+            .catch(() => {
+              this.alerta = "❌ Erro ao salvar!";
+              setTimeout(() => this.alerta = "", 3000);
+            });
+        },
+
+        // --------- DELETAR (mantive + atualiza cache) ----------
+        deletar(id) {
+          if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+          fetch(`/comerciante/api/produtos/${id}`, { method: 'DELETE' })
+            .then(() => {
+              this.alerta = "🗑️ Produto removido!";
+              this.produtos = this.produtos.filter(p => p.id !== id);
+              this.offset = this.produtos.length;
+              this._saveCache();
+              this.atualizarFiltro();
+              setTimeout(() => this.alerta = "", 3000);
+            })
+            .catch(() => { this.alerta = "❌ Erro ao deletar!"; setTimeout(() => this.alerta = "", 3000); });
+        },
+
+        async confirmarExclusao() {
+          if (!this.selecionados.length) return;
+          if (!confirm(`Tem certeza que deseja apagar ${this.selecionados.length} produto(s)?`)) return;
+
+          const ids = [...this.selecionados];
+
+          try {
+            // Deleta todos em paralelo
+            await Promise.all(ids.map(id =>
+              fetch(`/comerciante/api/produtos/${id}`, { method: 'DELETE' })
+            ));
+
+            // Atualiza lista de produtos apenas **uma vez**
+            this.produtos = this.produtos.filter(p => !ids.includes(p.id));
+
+            this.selecionados = [];
+            this.modoExclusao = false;
+            this.marcarTodos = false;
+            this.offset = this.produtos.length;
+            this._saveCache();
+            this.atualizarFiltro();
+
+            this.alerta = `🗑️ ${ids.length} produto(s) apagado(s)!`;
+            setTimeout(() => this.alerta = "", 3000);
+
+          } catch (err) {
+            console.error(err);
+            this.alerta = "❌ Erro ao deletar!";
+            setTimeout(() => this.alerta = "", 3000);
+          }
+        },
+
+
+        // --------- IMPORTAÇÃO DE PRODUTOS COM DOWNLOAD AUTOMÁTICO ----------
+        importarArquivo(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          this.carregando = true;
+          this.progresso = 0;
+
+          const fd = new FormData();
+          fd.append('arquivo', file);
+
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/comerciante/api/produtos/importar', true);
+          xhr.responseType = 'blob'; // Importante: receber o arquivo como blob
+
+          // progresso do upload
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) this.progresso = Math.round((e.loaded / e.total) * 100);
+          });
+
+          xhr.onload = () => {
+            this.carregando = false;
+
+            if (xhr.status === 200 || xhr.status === 201) {
+              // baixar automaticamente o arquivo recebido
+              const blob = xhr.response;
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "Relatorio_Importacao.xlsx"; // nome do arquivo
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+
+              this.alerta = "✅ Importação concluída e relatório baixado!";
+              setTimeout(() => this.alerta = "", 5000);
+
+              // recarregar produtos da primeira fatia
+              this.resetAndLoad();
+            } else {
+              this.alerta = `❌ Falha na importação: ${xhr.statusText || 'Erro desconhecido'}`;
+              setTimeout(() => this.alerta = "", 5000);
+            }
+          };
+
+          xhr.send(fd);
+        },
+
+        // --------- ATUALIZAÇÃO DE PRODUTOS COM DOWNLOAD AUTOMÁTICO ----------
+        atualizarProdutos() {
+          const file = this.$refs.fileInput.files[0];
+          if (!file) {
+            this.alerta = "⚠️ Selecione um arquivo antes de atualizar!";
+            setTimeout(() => this.alerta = "", 3000);
+            return;
+          }
+
+          this.carregando = true;
+          this.progresso = 0;
+
+          const fd = new FormData();
+          fd.append('arquivo', file);
+
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/comerciante/api/produtos/atualizar', true);
+          xhr.responseType = 'blob'; // importante: receber blob
+
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) this.progresso = Math.round((e.loaded / e.total) * 100);
+          });
+
+          xhr.onload = () => {
+            this.carregando = false;
+
+            if (xhr.status === 200 || xhr.status === 201) {
+              const blob = xhr.response;
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "Relatorio_Atualizacao.xlsx";
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+
+              this.alerta = "✅ Atualização concluída e relatório baixado!";
+              setTimeout(() => this.alerta = "", 5000);
+
+              // recarregar produtos da primeira fatia
+              this.resetAndLoad();
+            } else {
+              this.alerta = `❌ Falha na atualização: ${xhr.statusText || 'Erro desconhecido'}`;
+              setTimeout(() => this.alerta = "", 5000);
+            }
+          };
+
+          xhr.send(fd);
+        },
+
+
+        // --------- FUNÇÃO DE LIMPEZA (se for necessário remover listener quando componente for destruído) ----------
+        destroy() {
+          try {
+            window.removeEventListener('scroll', this._scrollHandler);
+          } catch (e) { }
+        },
+
+      };
+    }
+    // Função auxiliar para baixar arquivo automaticamente
+    function baixarRelatorioAutomatico(nomeArquivo, conteudo, tipo = "text/csv") {
+      const blob = new Blob([conteudo], { type: tipo });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nomeArquivo;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+  </script>
+
+</body>
+
+</html>

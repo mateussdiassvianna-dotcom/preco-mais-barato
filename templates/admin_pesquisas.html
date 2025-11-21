@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin | Pesquisas</title>
+
+  <!-- Bootstrap + Ícones + Chart.js -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { background: #f3f6fa; font-family: 'Inter', sans-serif; }
+    header {
+      background: linear-gradient(90deg, #2563eb, #1e40af);
+      color: white; padding: 20px; text-align: center; position: relative;
+    }
+    header a.voltar {
+      position: absolute; left: 20px; top: 15px; color: white;
+      text-decoration: none; background: rgba(0,0,0,0.2);
+      padding: 8px 12px; border-radius: 8px; transition: background 0.3s;
+    }
+    header a.voltar:hover { background: rgba(0,0,0,0.4); }
+
+    .filter-bar {
+      background: white; border-radius: 10px; padding: 15px; margin: 25px auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+
+    .card { border-radius: 12px; border: none; }
+    .card h5 { font-weight: 600; }
+    .metric { font-size: 1.5rem; font-weight: bold; color: #2563eb; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="{{ url_for('admin.admin_dashboard') }}" class="voltar"><i class="bi bi-arrow-left"></i> Voltar</a>
+  <h2>Relatório de Pesquisas</h2>
+</header>
+
+<main class="container mt-4">
+
+  <!-- 🔍 Barra de filtros -->
+  <div class="filter-bar row align-items-center g-3">
+    <div class="col-md-3">
+      <input type="date" id="filterStartDate" class="form-control" placeholder="Data Início">
+    </div>
+    <div class="col-md-3">
+      <input type="date" id="filterEndDate" class="form-control" placeholder="Data Fim">
+    </div>
+    <div class="col-md-3">
+      <select id="filterComerciante" class="form-select">
+        <option value="">Todos os Comerciantes</option>
+        {% for c in comerciantes %}
+        <option value="{{ c.nome }}">{{ c.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <input type="text" id="searchProduto" class="form-control" placeholder="Pesquisar produto...">
+    </div>
+  </div>
+
+  <!-- 📊 Métricas principais -->
+  <div class="row mt-4 g-4">
+    <div class="col-md-3">
+      <div class="card p-3 shadow-sm">
+        <h5>Total de Pesquisas</h5>
+        <div class="metric">{{ total_pesquisas }}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 shadow-sm">
+        <h5>Produto Mais Pesquisado</h5>
+        <div class="metric">{{ produto_mais_pesquisado.nome }} ({{ produto_mais_pesquisado.count }})</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 shadow-sm">
+        <h5>Produto Mais Clicado</h5>
+        <div class="metric">{{ produto_mais_clicado.nome }} ({{ produto_mais_clicado.count }})</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 shadow-sm">
+        <h5>Comerciante Mais Pesquisado</h5>
+        <div class="metric">{{ comerciante_mais_pesquisado.nome }} ({{ comerciante_mais_pesquisado.count }})</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📈 Gráficos -->
+  <div class="row mt-5 g-4">
+    <div class="col-md-6">
+      <div class="card p-3 shadow-sm">
+        <h5>Top Produtos Pesquisados</h5>
+        <canvas id="chartPesquisas"></canvas>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card p-3 shadow-sm">
+        <h5>Top Produtos Clicados</h5>
+        <canvas id="chartCliques"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📝 Tabela detalhada -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card p-3 shadow-sm">
+        <h5>Detalhes das Pesquisas</h5>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Comerciante</th>
+                <th>Qtd Pesquisas</th>
+                <th>Qtd Cliques</th>
+                <th>Última Pesquisa</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaPesquisas">
+              {% for p in pesquisas %}
+              <tr>
+                <td>{{ p.produto_nome }}</td>
+                <td>{{ p.comerciante_nome }}</td>
+                <td>{{ p.qtd_pesquisas }}</td>
+                <td>{{ p.qtd_cliques }}</td>
+                <td>{{ p.ultima_pesquisa }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // 🟦 Charts
+  const ctxPesquisas = document.getElementById('chartPesquisas').getContext('2d');
+  const chartPesquisas = new Chart(ctxPesquisas, {
+    type: 'bar',
+    data: {
+      labels: {{ top_produtos_pesquisados|map(attribute='nome')|list }},
+      datasets: [{
+        label: 'Pesquisas',
+        data: {{ top_produtos_pesquisados|map(attribute='count')|list }},
+        backgroundColor: '#2563eb'
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  const ctxCliques = document.getElementById('chartCliques').getContext('2d');
+  const chartCliques = new Chart(ctxCliques, {
+    type: 'bar',
+    data: {
+      labels: {{ top_produtos_clicados|map(attribute='nome')|list }},
+      datasets: [{
+        label: 'Cliques',
+        data: {{ top_produtos_clicados|map(attribute='count')|list }},
+        backgroundColor: '#16a34a'
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // 🔍 Filtro de tabela em tempo real
+  const searchProduto = document.getElementById('searchProduto');
+  searchProduto.addEventListener('input', function() {
+    const termo = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#tabelaPesquisas tr');
+    rows.forEach(row => {
+      const nome = row.children[0].innerText.toLowerCase();
+      row.style.display = nome.includes(termo) ? '' : 'none';
+    });
+  });
+</script>
+
+</body>
+</html>

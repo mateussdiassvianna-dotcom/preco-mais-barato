@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscar Produtos</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      background: #f9fafb;
+      color: #333;
+    }
+
+    header {
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      color: white;
+      padding: 25px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0.5px;
+    }
+
+    .linha-animada {
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b, #3b82f6);
+      background-size: 300% 100%;
+      animation: mover 6s linear infinite;
+    }
+
+    @keyframes mover {
+      0% {
+        background-position: 0% 0%;
+      }
+
+      100% {
+        background-position: 300% 0%;
+      }
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 30px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    #avisoAjuda {
+      background: #fef3c7;
+      color: #b45309;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #avisoResponsabilidade {
+      background: #f1f5f9;
+      color: #b45309;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    #localizacaoContainer {
+      background: #f1f5f9;
+      border: 2px dashed #3b82f6;
+      border-radius: 16px;
+      padding: 25px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    #localizacaoContainer h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #2563eb;
+    }
+
+    #localizacaoContainer p.desc {
+      margin: 8px 0 20px;
+      font-size: 15px;
+      color: #475569;
+    }
+
+    #localizacaoContainer .icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    #btnLocalizacao {
+      padding: 14px 22px;
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      border: none;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    #btnLocalizacao:hover {
+      background: linear-gradient(90deg, #1e40af, #2563eb);
+      transform: scale(1.05);
+    }
+
+    #btnResetarLocalizacao {
+      margin-top: 12px;
+      padding: 10px 18px;
+      background: #f87171;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    #btnResetarLocalizacao:hover {
+      background: #b91c1c;
+    }
+
+    .info-localizacao {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    #manualContainer {
+      margin-top: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #2563eb;
+      margin-top: 12px;
+      display: block;
+      text-align: left;
+    }
+
+    select,
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: border 0.3s;
+    }
+
+    select:focus,
+    input[type="text"]:focus {
+      border: 1px solid #2563eb;
+      outline: none;
+      box-shadow: 0 0 4px rgba(37, 99, 235, 0.4);
+    }
+
+    button,
+    #btnBuscar {
+      margin-top: 20px;
+      padding: 14px 0;
+      width: 100%;
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.4s;
+    }
+
+    button:hover,
+    #btnBuscar:hover {
+      background: linear-gradient(90deg, #1e40af, #2563eb);
+      transform: translateY(-2px);
+    }
+
+    #produtosEncontrados {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .produto {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      aspect-ratio: 1/1;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s forwards;
+    }
+
+    .produto:hover {
+      transform: scale(1.04);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+    }
+
+    .produto img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .produto h3 {
+      margin: 12px 0 6px;
+      color: #2563eb;
+      font-size: 18px;
+    }
+
+    .produto p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .produto a.btn-detalhes {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: linear-gradient(90deg, #10b981, #059669);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .produto a.btn-detalhes:hover {
+      background: linear-gradient(90deg, #059669, #047857);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .distancia-card {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #2563eb;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 3px 6px;
+      border-radius: 6px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 450px;
+      position: relative;
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #333;
+    }
+
+    .filtro-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .filter-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      background: #f1f5f9;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      transition: all 0.2s;
+    }
+
+    .filter-label:hover {
+      border-color: #2563eb;
+      background: #e0f2fe;
+    }
+
+    .filter-label input[type="checkbox"] {
+      margin: 0;
+    }
+
+    .btnExplicacao {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btnExplicacao:hover {
+      background: #1e40af;
+    }
+
+    footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+      padding: 20px;
+    }
+
+    footer a {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 10px 18px;
+      background: #2563eb;
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+
+    footer a:hover {
+      background: #1e40af;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Buscar Produtos</h1>
+    <div class="linha-animada"></div>
+  </header>
+
+  <main>
+    <p id="avisoAjuda">⚠️ Para buscar produtos, precisamos que você permita a localização automática ou informe seu
+      Estado e Cidade manualmente.</p>
+
+    <div id="localizacaoContainer">
+      <div class="icon">📍</div>
+      <h2>Usamos sua localização apenas para filtros de distância, custo-benefício e proximidade.</h2>
+      <p class="desc">Permita a localização ou informe manualmente seu estado e cidade.</p>
+      <button id="btnLocalizacao">Detectar minha localização</button>
+      <button id="btnResetarLocalizacao">Resetar localização</button>
+      <p class="info-localizacao" id="infoLocalizacao"></p>
+    </div>
+
+    <div id="manualContainer">
+      <label for="estado">Selecione o Estado *</label>
+      <select id="estado">
+        <option value="">Selecione</option>
+        <option value="TO">Tocantins</option>
+        <option value="GO">Goiás</option>
+        <option value="BA">Bahia</option>
+        <option value="MA">Maranhão</option>
+        <option value="PA">Pará</option>
+        <option value="MT">Mato Grosso</option>
+        <option value="DF">Distrito Federal</option>
+        <option value="MG">Minas Gerais</option>
+        <option value="SP">São Paulo</option>
+        <option value="RJ">Rio de Janeiro</option>
+      </select>
+
+      <label for="cidade">Cidade *</label>
+      <select id="cidade">
+        <option value="">Selecione um estado primeiro</option>
+      </select>
+    </div>
+
+    <form id="formBuscar" style="display:none;">
+      <label for="busca">Buscar por produto</label>
+      <input type="text" id="busca" placeholder="Ex: Arroz, Eletrônicos" disabled />
+
+      <h3 style="margin-top:20px; color:#2563eb;">Filtros avançados (Opcional)</h3>
+      <div class="filtro-container">
+        <label class="filter-label">
+          <input type="checkbox" id="filtroProximidade">
+          <span>Comércios próximos</span>
+          <button type="button" class="btnExplicacao" data-tipo="proximidade">ℹ️</button>
+        </label>
+
+        <label class="filter-label">
+          <input type="checkbox" id="filtroCustoBeneficio">
+          <span>Custo real</span>
+          <button type="button" class="btnExplicacao" data-tipo="custo">ℹ️</button>
+        </label>
+
+        <label class="filter-label">
+          <input type="checkbox" id="filtroEntrega">
+          <span>Comércios que entregam</span>
+          <button type="button" class="btnExplicacao" data-tipo="entrega">ℹ️</button>
+        </label>
+
+        <label class="filter-label">
+          <input type="checkbox" id="filtroNovos">
+          <span>Mais recentes</span>
+          <button type="button" class="btnExplicacao" data-tipo="novos">ℹ️</button>
+        </label>
+
+        <label class="filter-label">
+          <input type="checkbox" id="filtroAbertaAgora">
+          <span>Comércios abertas agora</span>
+          <button type="button" class="btnExplicacao" data-tipo="abertaAgora">ℹ️</button>
+        </label>
+
+      </div>
+
+      <button type="submit" id="btnBuscar" disabled>Buscar</button>
+      <p id="avisoResponsabilidade">⚠️ Verifique produtos com dados incompletos antes de comprar.</p>
+    </form>
+
+    <div id="produtosEncontrados"></div>
+  </main>
+
+  <div id="modalExplicativo" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h3 id="modalTitulo">Filtro</h3>
+      <p id="modalDescricao">Descrição do filtro</p>
+    </div>
+  </div>
+
+  <footer>
+    Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663.<br>
+    <a href="/">Voltar ao Início</a>
+  </footer>
+</body>
+
+</html>
+
+
+<script>
+  const SEM_IMAGEM_URL = "/static/sem-imagem.png";
+  const cidadesPorEstado = {
+    "TO": ["Palmas", "Araguaína", "Gurupi", "Formoso do Araguaia"],
+    "GO": ["Goiânia", "Anápolis"],
+    "BA": ["Salvador", "Feira de Santana"],
+    "MA": ["São Luís", "Imperatriz"],
+    "PA": ["Belém", "Santarém"],
+    "MT": ["Cuiabá", "Várzea Grande"],
+    "DF": ["Brasília", "Taguatinga"],
+    "MG": ["Belo Horizonte", "Uberlândia"],
+    "SP": ["São Paulo", "Campinas"],
+    "RJ": ["Rio de Janeiro", "Niterói"]
+  };
+  const estadosMap = {
+    "Tocantins": "TO", "Goiás": "GO", "Bahia": "BA", "Maranhão": "MA", "Pará": "PA",
+    "Mato Grosso": "MT", "Distrito Federal": "DF", "Minas Gerais": "MG",
+    "São Paulo": "SP", "Rio de Janeiro": "RJ"
+  };
+
+  const estadoSelect = document.getElementById("estado");
+  const cidadeSelect = document.getElementById("cidade");
+  const formBuscar = document.getElementById("formBuscar");
+  const produtosEncontrados = document.getElementById("produtosEncontrados");
+  const buscaInput = document.getElementById("busca");
+  const btnBuscar = document.getElementById("btnBuscar");
+  const btnLocalizacao = document.getElementById("btnLocalizacao");
+  const infoLocalizacao = document.getElementById("infoLocalizacao");
+  const avisoAjuda = document.getElementById("avisoAjuda");
+  let userLat = null, userLon = null;
+
+  // ---------- helpers de erro visível (cria contêiner se necessário) ----------
+  function ensureErrorContainer() {
+    let cont = document.getElementById("filtrosErros");
+    if (!cont) {
+      cont = document.createElement("div");
+      cont.id = "filtrosErros";
+      cont.style.color = "#b91c1c";
+      cont.style.marginTop = "10px";
+      cont.style.fontSize = "14px";
+      cont.style.lineHeight = "1.3";
+      cont.setAttribute("aria-live", "polite");
+      // tenta colocar abaixo dos filtros (se existir)
+      const filtrosContainer = document.querySelector(".filtro-container") || formBuscar;
+      filtrosContainer.parentNode.insertBefore(cont, filtrosContainer.nextSibling);
+    }
+    return cont;
+  }
+
+  function showFiltroError(msg, persist = false) {
+    const cont = ensureErrorContainer();
+    const p = document.createElement("div");
+    p.className = "filtro-erro-msg";
+    p.textContent = "⚠️ " + msg;
+    cont.appendChild(p);
+    if (!persist) {
+      setTimeout(() => {
+        try { p.remove(); } catch (e) { }
+      }, 8000);
+    }
+    console.warn("Filtro aviso:", msg);
+  }
+
+  function clearFiltroErrors() {
+    const cont = document.getElementById("filtrosErros");
+    if (cont) cont.innerHTML = "";
+  }
+
+  // ===============================
+  // Captura automática de geolocalização
+  // ===============================
+  function obterLocalizacao() {
+    if (!navigator.geolocation) {
+      console.warn("Geolocalização não suportada.");
+      showFiltroError("Seu navegador não suporta geolocalização.", true);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLat = pos.coords.latitude;
+        userLon = pos.coords.longitude;
+        console.log("📍 Localização capturada automaticamente:", userLat, userLon);
+        salvarLocalizacaoEFiltros();
+        buscarProdutos(true); // busca inicial com atualização de distâncias em background
+      },
+      (err) => {
+        console.warn("⚠️ Usuário negou geolocalização ou erro:", err?.message);
+        showFiltroError("Permissão de localização negada ou falha ao capturar. Alguns filtros (proximidade/custo) precisarão de localização.", true);
+      },
+      { enableHighAccuracy: false, timeout: 7000, maximumAge: 5 * 60 * 1000 }
+    );
+  }
+
+  // -------------------- Botão resetar --------------------
+  document.getElementById("btnResetarLocalizacao")?.addEventListener("click", () => {
+    userLat = null; userLon = null;
+    estadoSelect.value = "";
+    cidadeSelect.innerHTML = '<option value="">Selecione um estado primeiro</option>';
+    buscaInput.value = ""; buscaInput.disabled = true; btnBuscar.disabled = true;
+    formBuscar.style.display = "none"; infoLocalizacao.textContent = "";
+    produtosEncontrados.innerHTML = "";
+    localStorage.removeItem("buscaEstado");
+    clearFiltroErrors();
+    if (avisoAjuda) avisoAjuda.style.display = "block";
+  });
+
+  // -------------------- Carregar cidades --------------------
+  function carregarCidades(estado) {
+    cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+    cidadesPorEstado[estado]?.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c;
+      cidadeSelect.appendChild(opt);
+    });
+  }
+
+  // -------------------- Desbloquear pesquisa --------------------
+  function desbloquearPesquisa() {
+    buscaInput.disabled = false;
+    btnBuscar.disabled = false;
+    formBuscar.style.display = "block";
+    if (avisoAjuda) avisoAjuda.style.display = "none";
+  }
+
+  // -------------------- Eventos select --------------------
+  estadoSelect.addEventListener("change", () => {
+    carregarCidades(estadoSelect.value); cidadeSelect.value = "";
+  });
+  cidadeSelect.addEventListener("change", () => {
+    if (cidadeSelect.value) {
+      desbloquearPesquisa();
+      salvarLocalizacaoEFiltros();
+    }
+  });
+
+  // -------------------- Detectar localização (botão) --------------------
+  btnLocalizacao.addEventListener("click", () => {
+    infoLocalizacao.textContent = "Detectando localização...";
+    navigator.geolocation.getCurrentPosition(pos => {
+      userLat = pos.coords.latitude; userLon = pos.coords.longitude;
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLat}&lon=${userLon}&format=json`)
+        .then(r => r.json())
+        .then(data => {
+          const estadoNome = data.address.state || data.address.region;
+          const cidade = data.address.city || data.address.town || data.address.village;
+          const uf = estadosMap[estadoNome] || "";
+          if (uf && cidade) {
+            estadoSelect.value = uf; carregarCidades(uf); cidadeSelect.value = cidade;
+            infoLocalizacao.textContent = `Local detectado: ${cidade}, ${uf}`;
+            desbloquearPesquisa(); salvarLocalizacaoEFiltros();
+            clearFiltroErrors();
+            buscarProdutos(true);
+          } else {
+            infoLocalizacao.textContent = "Não foi possível detectar. Selecione manualmente.";
+            showFiltroError("Reverse geocoding não retornou cidade/UF legível. Selecione seu estado/cidade manualmente.", true);
+          }
+        })
+        .catch(err => {
+          infoLocalizacao.textContent = "Erro ao detectar.";
+          console.error("Erro nominatum:", err);
+          showFiltroError("Erro ao obter endereço por coordenadas (Nominatim).", true);
+        });
+    }, (err) => {
+      console.warn("Permissão negada ou erro:", err?.message);
+      infoLocalizacao.textContent = "Permissão negada.";
+      showFiltroError("Permissão de localização negada. Ative para usar filtros por distância/custo.", true);
+    });
+  });
+
+  // -------------------- Função salvar localização e filtros --------------------
+  function salvarLocalizacaoEFiltros() {
+    const filtros = {
+      userLat, userLon,
+      estado: estadoSelect.value,
+      cidade: cidadeSelect.value,
+      busca: buscaInput.value,
+      filtroProx: document.getElementById("filtroProximidade").checked,
+      filtroCusto: document.getElementById("filtroCustoBeneficio").checked,
+      filtroEntrega: document.getElementById("filtroEntrega").checked,
+      filtroNovos: document.getElementById("filtroNovos").checked,
+      filtroAbertaAgora: document.getElementById("filtroAbertaAgora").checked,
+      scrollY: window.scrollY
+    };
+    localStorage.setItem("buscaEstado", JSON.stringify(filtros));
+  }
+
+  // -------------------- Filtrar checkboxes --------------------
+  document.querySelectorAll(".filter-label input[type='checkbox']").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const filtroProx = document.getElementById("filtroProximidade");
+      const filtroCusto = document.getElementById("filtroCustoBeneficio");
+      if (cb.id === "filtroProximidade" && cb.checked) filtroCusto.checked = false;
+      if (cb.id === "filtroCustoBeneficio" && cb.checked) filtroProx.checked = false;
+      salvarLocalizacaoEFiltros();
+
+      // mostrar aviso imediato se não tem localização
+      if ((cb.id === "filtroProximidade" || cb.id === "filtroCustoBeneficio") && !userLat) {
+        showFiltroError("Para usar esse filtro permita a localização. Estamos tentando calcular automaticamente quando você permitir.", true);
+      } else {
+        clearFiltroErrors();
+      }
+
+      buscarProdutos(true);
+    });
+  });
+
+  // -------------------- Scroll --------------------
+  window.addEventListener("scroll", () => {
+    const data = JSON.parse(localStorage.getItem("buscaEstado")) || {};
+    data.scrollY = window.scrollY;
+    localStorage.setItem("buscaEstado", JSON.stringify(data));
+  });
+  function restaurarScroll() {
+    const data = JSON.parse(localStorage.getItem("buscaEstado"));
+    if (data?.scrollY) window.scrollTo(0, data.scrollY);
+  }
+
+  // -------------------- Modal explicativo filtros --------------------
+  const modal = document.getElementById("modalExplicativo");
+  const modalTitulo = document.getElementById("modalTitulo");
+  const modalDescricao = document.getElementById("modalDescricao");
+  document.querySelector(".close-modal").onclick = () => { modal.style.display = "none"; }
+  window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+  document.querySelectorAll(".btnExplicacao").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tipo = btn.dataset.tipo; let titulo = "", desc = "";
+      if (tipo === "proximidade") { titulo = "Mais próximos de mim"; desc = "Este filtro mostra primeiro os estabelecimentos mais próximos. Para resultados precisos, permita a geolocalização."; }
+      else if (tipo === "custo") { titulo = "Preço + distância"; desc = "Este filtro mostra produtos considerando preço + distância. Para resultados precisos, permita a geolocalização."; }
+      else if (tipo === "entrega") { titulo = "Apenas lojas que entregam"; desc = "Mostra apenas lojas que fazem entrega."; }
+      else if (tipo === "novos") { titulo = "Mais recentes"; desc = "Produtos adicionados recentemente."; }
+      else if (tipo === "abertaAgora") { titulo = "Somente lojas abertas"; desc = "Mostra apenas lojas abertas agora."; }
+      modalTitulo.textContent = titulo;
+      modalDescricao.textContent = desc;
+      modal.style.display = "block";
+    });
+  });
+
+  // -------------------- Funções de filtro --------------------
+  function aplicarFiltroProximidade(produtos) {
+    return produtos.sort((a, b) => (a.distancia ?? Number.MAX_VALUE) - (b.distancia ?? Number.MAX_VALUE));
+  }
+  function aplicarFiltroCustoBeneficio(produtos) {
+    const CUSTO_KM = 1.5;
+    produtos.forEach(p => {
+      const preco = Number(p.preco) || 0;
+      const distancia = p.distancia != null ? p.distancia : 0;
+      p._custoTotal = preco + distancia * CUSTO_KM;
+    });
+    return produtos.sort((a, b) => (a._custoTotal ?? Number.MAX_VALUE) - (b._custoTotal ?? Number.MAX_VALUE));
+  }
+
+  // -------------------- Distância haversine --------------------
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // -------------------- OSRM distâncias em chunks --------------------
+  async function atualizarDistanciasEmBackground(produtos) {
+    if (!userLat || !userLon) {
+      console.warn("atualizarDistanciasEmBackground: sem userLat/userLon");
+      return;
+    }
+    const CHUNK_SIZE = 20;
+    for (let i = 0; i < produtos.length; i += CHUNK_SIZE) {
+      const chunk = produtos.slice(i, i + CHUNK_SIZE);
+      const destinos = [], mapping = [];
+      chunk.forEach((p, idx) => {
+        const lat = p.comerciante?.latitude;
+        const lon = p.comerciante?.longitude;
+        if (lat != null && lon != null) { destinos.push(`${lon},${lat}`); mapping.push(idx); }
+      });
+      if (destinos.length === 0) continue;
+      try {
+        const coords = [`${userLon},${userLat}`, ...destinos].join(';');
+        const url = `https://router.project-osrm.org/table/v1/driving/${coords}?sources=0&annotations=distance`;
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          throw new Error("OSRM resposta não OK: " + resp.status);
+        }
+        const data = await resp.json();
+        if (!data || data.code !== "Ok" || !data.distances) {
+          throw new Error("OSRM retorno inválido");
+        }
+        const linha = data.distances[0];
+        let nullCount = 0;
+        for (let j = 1; j < linha.length; j++) {
+          const productIdx = i + mapping[j - 1];
+          const distMeters = linha[j];
+          if (distMeters == null || Number.isNaN(distMeters)) {
+            nullCount++;
+            chunk[mapping[j - 1]].distancia = calcularDistancia(userLat, userLon, parseFloat(destinos[j - 1].split(',')[1]), parseFloat(destinos[j - 1].split(',')[0]));
+          } else {
+            chunk[mapping[j - 1]].distancia = distMeters / 1000;
+          }
+        }
+        if (nullCount > 0) {
+          showFiltroError(`Algumas rotas não foram calculadas pela OSRM (usado fallback haversine para ${nullCount} itens).`, false);
+          console.warn("OSRM retornou null para", nullCount, "destinos do chunk.");
+        }
+        // Reordenar produtos exibidos após cada chunk
+        const filtroProx = document.getElementById("filtroProximidade").checked;
+        const filtroCusto = document.getElementById("filtroCustoBeneficio").checked;
+        let produtosRender = [...produtos];
+        if (filtroCusto) produtosRender = aplicarFiltroCustoBeneficio(produtosRender);
+        else if (filtroProx) produtosRender = aplicarFiltroProximidade(produtosRender);
+        renderizarProdutos(produtosRender);
+      } catch (err) {
+        console.error("Erro OSRM chunk:", err);
+        showFiltroError("Erro ao calcular rotas (OSRM). Tentando fallback por distância em linha reta.", true);
+        // fallback: usar haversine para o chunk
+        chunk.forEach((p, idx) => {
+          const lat = p.comerciante?.latitude;
+          const lon = p.comerciante?.longitude;
+          if (lat != null && lon != null) {
+            p.distancia = calcularDistancia(userLat, userLon, lat, lon);
+          } else {
+            p.distancia = null;
+          }
+        });
+        const filtroProx = document.getElementById("filtroProximidade").checked;
+        const filtroCusto = document.getElementById("filtroCustoBeneficio").checked;
+        let produtosRender = [...produtos];
+        if (filtroCusto) produtosRender = aplicarFiltroCustoBeneficio(produtosRender);
+        else if (filtroProx) produtosRender = aplicarFiltroProximidade(produtosRender);
+        renderizarProdutos(produtosRender);
+      }
+    }
+  }
+
+  // -------------------- Renderizar produtos --------------------
+  function renderizarProdutos(produtos) {
+    produtosEncontrados.innerHTML = "";
+    if (produtos.length === 0) { produtosEncontrados.innerHTML = "<p>Nenhum produto encontrado.</p>"; return; }
+    const filtroProx = document.getElementById("filtroProximidade").checked;
+    const filtroCusto = document.getElementById("filtroCustoBeneficio").checked;
+
+    produtos.forEach((p, i) => {
+      const preco = Number(p.preco) || 0;
+      const entrega = p.comerciante?.faz_entrega ? "✅ Faz entrega" : "❌ Não entrega";
+      const imagemProduto = p.imagem?.trim() ? p.imagem : SEM_IMAGEM_URL;
+      const aviso = (!p.nome || !p.preco || !p.marca || !p.categoria || !p.descricao || !p.imagem || p.imagem?.trim() === "")
+        ? '<p style="color:#b45309; font-size:13px; margin-top:4px;">⚠️ Confira com o vendedor antes da compra</p>' : '';
+
+      let funcionando = "", corStatus = "#6b7280";
+      switch (p.comerciante?.loja_status || "sem_horario") {
+        case "aberto": funcionando = "Aberta agora"; corStatus = "green"; break;
+        case "fechado": funcionando = "Fechada agora"; corStatus = "red"; break;
+        default: funcionando = "Horário não informado"; corStatus = "#6b7280"; break;
+      }
+
+      const mostrarDistancia = (p.distancia != null) && (filtroProx || filtroCusto);
+      const card = document.createElement("div");
+      card.className = "produto"; card.style.animationDelay = `${i * 0.1}s`;
+      card.innerHTML = `
+      ${mostrarDistancia ? `<div class="distancia-card">${p.distancia.toFixed(2)} km</div>` : ''}
+      <img src="${imagemProduto}" alt="${p.nome || 'Produto sem nome'}">
+      <h3>${p.nome || 'Sem nome'}</h3>
+      <p><strong>Preço:</strong> ${preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+      <p><strong>Loja:</strong> ${p.comerciante?.nome || '-'} - ${p.comerciante?.cidade || ''}/${p.comerciante?.estado || ''}</p>
+      <p><strong>Horário:</strong> <span style="color:${corStatus}; font-weight:bold">${funcionando}</span></p>
+      <p><strong>Entrega:</strong> ${entrega}</p>
+      ${aviso}
+      <a href="/consumidor/produto/${p.id}" class="btn-detalhes">Ver Detalhes</a>
+    `;
+      card.querySelector(".btn-detalhes")?.addEventListener("click", () => salvarLocalizacaoEFiltros());
+      produtosEncontrados.appendChild(card);
+    });
+  }
+
+  // -------------------- Buscar produtos --------------------
+  async function buscarProdutos(usarDistanciasBackground = false) {
+    if (!estadoSelect.value || !cidadeSelect.value) return;
+    produtosEncontrados.innerHTML = "Buscando...";
+    clearFiltroErrors();
+    const estado = estadoSelect.value.trim();
+    const cidade = cidadeSelect.value.trim();
+    const busca = buscaInput.value.trim().toLowerCase();
+    let url = `/consumidor/api/produtos?busca=${encodeURIComponent(busca)}&estado=${encodeURIComponent(estado)}&cidade=${encodeURIComponent(cidade)}`;
+    if (userLat && userLon) url += `&lat=${encodeURIComponent(userLat)}&lon=${encodeURIComponent(userLon)}`;
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("API produtos retornou status " + resp.status);
+      let produtos = await resp.json();
+
+      // ⚠️ Garantir que todo produto tenha comerciante
+      produtos = produtos.map(p => {
+        if (!p.comerciante) {
+          p.comerciante = {
+            id: 0,
+            nome: "-",
+            cidade: "",
+            estado: "",
+            latitude: null,
+            longitude: null,
+            faz_entrega: false,
+            loja_status: "sem_horario"
+          };
+        }
+        return p;
+      });
+
+
+      const filtroProx = document.getElementById("filtroProximidade").checked;
+      const filtroCusto = document.getElementById("filtroCustoBeneficio").checked;
+      const filtroEntrega = document.getElementById("filtroEntrega").checked;
+      const filtroNovos = document.getElementById("filtroNovos").checked;
+      const filtroAbertaAgora = document.getElementById("filtroAbertaAgora").checked;
+
+      produtos = produtos.filter(p => {
+        if (filtroEntrega && !p.comerciante?.faz_entrega) return false;
+        if (filtroAbertaAgora && p.comerciante?.loja_status !== "aberto") return false;
+        return true;
+      });
+
+      // inicializa distâncias nulas
+      produtos.forEach(p => p.distancia = null);
+
+      // se usuário não autorizou localização e filtro por distância foi marcado, avisa
+      if ((filtroProx || filtroCusto) && (!userLat || !userLon)) {
+        showFiltroError("Filtro por proximidade/custo selecionado, porém localização não disponível. Permita localização para resultados precisos.", true);
+      }
+
+      renderizarProdutos(produtos); // renderiza imediatamente (sem distâncias)
+
+      if ((filtroProx || filtroCusto) && usarDistanciasBackground && userLat && userLon) {
+        // atualiza distâncias em background (OSRM em chunks)
+        atualizarDistanciasEmBackground(produtos);
+      } else {
+        // ordenação final se não usar background (ou sem lat/lon)
+        if (filtroCusto) produtos = aplicarFiltroCustoBeneficio(produtos);
+        else if (filtroProx) produtos = aplicarFiltroProximidade(produtos);
+        else if (filtroNovos) produtos.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+        else produtos.sort((a, b) => Number(a.preco) - Number(b.preco));
+        renderizarProdutos(produtos);
+      }
+
+    } catch (err) {
+      console.error("Erro buscarProdutos:", err);
+      produtosEncontrados.innerHTML = `<p>Erro ao buscar: ${err.message}</p>`;
+      showFiltroError("Erro ao buscar produtos: " + err.message, true);
+    }
+  }
+
+  // -------------------- Evento submit --------------------
+  formBuscar.addEventListener("submit", e => { e.preventDefault(); salvarLocalizacaoEFiltros(); buscarProdutos(true); });
+
+  // -------------------- Restaurar estado --------------------
+  window.addEventListener("load", () => {
+    const data = JSON.parse(localStorage.getItem("buscaEstado"));
+    if (data) {
+      userLat = data.userLat; userLon = data.userLon;
+      if (data.estado) { estadoSelect.value = data.estado; carregarCidades(data.estado); }
+      if (data.cidade) cidadeSelect.value = data.cidade;
+      if (data.busca) buscaInput.value = data.busca;
+      document.getElementById("filtroProximidade").checked = data.filtroProx;
+      document.getElementById("filtroCustoBeneficio").checked = data.filtroCusto;
+      document.getElementById("filtroEntrega").checked = data.filtroEntrega;
+      document.getElementById("filtroNovos").checked = data.filtroNovos;
+      document.getElementById("filtroAbertaAgora").checked = data.filtroAbertaAgora;
+      if (cidadeSelect.value) desbloquearPesquisa();
+      restaurarScroll();
+      if (buscaInput.value.trim() !== "")
+        buscarProdutos(true);
+    }
+  });
+
+  // chama a captura automática de localização ao carregar
+  window.addEventListener("load", obterLocalizacao);
+</script>
+
+
+
+
+
+</body>
+
+</html>

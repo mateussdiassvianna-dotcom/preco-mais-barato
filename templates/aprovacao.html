@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro Recebido - Preço Mais Barato</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --accent: #10b981;
+      --whatsapp: #25D366;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      animation: fadeIn 1s ease;
+    }
+
+    main {
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--primary);
+      max-width: 480px;
+      width: 100%;
+      border-radius: 18px;
+      padding: 35px 28px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      animation: fadeInUp 0.9s ease;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 15px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 18px;
+      color: #374151;
+    }
+    p strong { color: var(--primary); }
+
+    .whatsapp-btn {
+      display: inline-block;
+      background: var(--whatsapp);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-decoration: none;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 6px 16px rgba(37,211,102,0.4);
+    }
+
+    .whatsapp-btn:hover {
+      background: #1ebe5d;
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 10px 22px rgba(37,211,102,0.6);
+    }
+
+    .info {
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 20px;
+      background: #f9fafb;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      text-align: left;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #e0f2f1;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      animation: fadeIn 1.2s ease;
+    }
+
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes fadeInUp { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>✅ Cadastro Recebido!</h1>
+    <p><strong id="nomeComercio">Comércio</strong>, seu cadastro no <strong>Preço Mais Barato</strong> foi registrado com sucesso.</p>
+
+    <p>Seu cadastro agora está <strong>aguardando aprovação da nossa equipe</strong>. Assim que aprovado, você poderá acessar todos os recursos da plataforma.</p>
+
+    <p>Um <strong>e-mail de confirmação</strong> já foi enviado para o endereço informado no cadastro. Clique no link dentro do e-mail para validar seu endereço. Esse passo é necessário para publicar seus produtos, e pode ser feito imediatamente, <strong>independentemente da aprovação do administrador</strong>.</p>
+
+    <p>Se você não recebeu o e-mail de confirmação, verifique se digitou o endereço corretamente ou consulte sua caixa de spam. Caso continue sem receber, entre em contato com nossa equipe pelo WhatsApp.</p>
+
+    <p>Enquanto isso, se precisar de suporte ou tiver alguma dúvida, entre em contato com a nossa equipe pelo WhatsApp:</p>
+
+    <a href="https://wa.me/556381245663" target="_blank" class="whatsapp-btn">
+      📲 Falar no WhatsApp
+    </a>
+
+    <p class="info">
+      ⏳ Favor aguardar a aprovação. Assim que sua conta for aprovada, você será notificado por e-mail e poderá acessar todos os recursos da plataforma.
+    </p>
+  </main>
+
+  <footer>
+    Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663. Envie apenas mensagens.
+  </footer>
+
+  <script>
+    // Pega o nome do comércio da query string da URL
+    const params = new URLSearchParams(window.location.search);
+    const nomeDoComercio = params.get('nome_do_comercio') || "Comércio";
+    document.getElementById("nomeComercio").textContent = nomeDoComercio;
+  </script>
+</body>
+</html>

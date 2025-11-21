@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ produto.nome }} - Preço Mais Barato</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --accent: #10b981;
+      --info: #f59e0b;
+      --danger: #ef4444;
+      --bg-gradient: linear-gradient(135deg, #2563eb, #10b981);
+      --muted: #6b7280;
+      --card-bg: #fff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 30px 20px;
+      color: #fff;
+      text-align: center;
+      text-shadow: 1px 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    header h1 {
+      font-size: 2.3rem;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: #d1fae5;
+    }
+
+    main {
+      width: 95%;
+      max-width: 720px;
+      margin-top: 20px;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .produto-container {
+      background: var(--card-bg);
+      padding: 28px;
+      border-radius: 18px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      text-align: left;
+      width: 100%;
+    }
+
+    .produto-container img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease;
+    }
+
+    .produto-container img:hover {
+      transform: scale(1.03);
+    }
+
+    .produto-container h2 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .produto-container p {
+      margin: 6px 0;
+      font-size: 1rem;
+      color: #374151;
+    }
+
+    .produto-container .preco {
+      color: var(--accent);
+      font-size: 1.9rem;
+      font-weight: bold;
+      margin: 14px 0;
+      text-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      text-align: center;
+      padding: 14px 0;
+      margin: 10px 0;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn span {
+      margin-left: 8px;
+    }
+
+    .btn-whatsapp {
+      background: var(--accent);
+    }
+
+    .btn-whatsapp:hover {
+      background: #059669;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-perfil {
+      background: var(--info);
+    }
+
+    .btn-perfil:hover {
+      background: #d97706;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-voltar {
+      background: #9ca3af;
+    }
+
+    .btn-voltar:hover {
+      background: #6b7280;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(107, 114, 128, 0.4);
+    }
+
+    .btn-mapa {
+      background: var(--danger);
+    }
+
+    .btn-mapa:hover {
+      background: #b91c1c;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Modal Perfil */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: flex-start;
+      overflow-y: auto;
+      padding: 40px 0;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 480px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      animation: slideDown 0.3s ease;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: var(--primary);
+    }
+
+    .modal img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    footer {
+      margin-top: 25px;
+      font-size: 14px;
+      color: #f0f0f0;
+      padding: 15px 0;
+      width: 100%;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.2);
+      user-select: none;
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>{{ produto.nome }}</h1>
+    <p>{{ produto.comerciante['nome'] }} • {{ produto.comerciante['cidade'] }}, {{ produto.comerciante['estado'] }}</p>
+  </header>
+
+  <main>
+    <div class="produto-container">
+      {% if produto.imagem %}
+      <img src="{{ produto.imagem }}" alt="Foto de {{ produto.nome }}">
+      {% else %}
+      <img src="{{ url_for('static', filename='img/sem-imagem.png') }}" alt="Sem imagem disponível">
+      {% endif %}
+
+      <h2>{{ produto.nome }}</h2>
+
+      <!-- Seção de Detalhes do Produto -->
+      <div
+        style="margin-top:15px; padding:15px; background:#f3f4f6; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
+        <p><strong>Nome:</strong> {{ produto.nome }}</p>
+        <p><strong>Marca:</strong> {{ produto.marca or '—' }}</p>
+        <p><strong>Categoria:</strong> {{ produto.categoria or '—' }}</p>
+        <p><strong>Descrição:</strong> {{ produto.descricao or '—' }}</p>
+      </div>
+
+      <p style="margin:10px 0; font-weight:600;">
+        🕒 Loja:
+        {% if loja_status == 'aberto' %}
+        <span style="color:#10b981;">🟢 Aberta agora</span>
+        {% if alerta_fechamento and tempo_restante %}
+        <span style="color:#f59e0b;">
+          ⚠️ Fecha em
+          {% set horas = tempo_restante.seconds // 3600 %}
+          {% set minutos = (tempo_restante.seconds // 60) % 60 %}
+          {{ horas }}h {{ minutos }}m
+        </span>
+        {% endif %}
+        {% elif loja_status == 'fechado' %}
+        <span style="color:#ef4444;">🔴 Fechada no momento</span>
+        <span style="color:#6b7280;">💡 Você ainda pode enviar mensagem e aguardar atendimento.</span>
+        {% elif loja_status == 'sem_horario' %}
+        <span style="color:#999;">Horário não informado</span>
+        {% else %}
+        <span style="color:#999;">Status da loja indisponível</span>
+        {% endif %}
+      </p>
+
+      <p class="preco">R$ {{ "%.2f"|format(produto.preco)|replace('.', ',') }}</p>
+      <p><strong>Entrega:</strong> {{ 'Sim' if produto.comerciante['faz_entrega'] else 'Não' }}</p>
+
+      {% set whatsapp_num = produto.comerciante['whatsapp']|replace(' ', '')|replace('-', '') %}
+      {% set mensagem_url = ("Olá, quero comprar o produto: " ~ produto.nome) | urlencode %}
+      {% if whatsapp_num %}
+      <a href="https://wa.me/55{{ whatsapp_num }}?text={{ mensagem_url }}" class="btn btn-whatsapp" target="_blank"
+        rel="noopener">💬<span>Comprar pelo WhatsApp</span></a>
+      {% endif %}
+
+      <button class="btn btn-perfil" onclick="openModal()">👤<span>Ver perfil do comerciante</span></button>
+      <a href="javascript:void(0)" class="btn btn-voltar" onclick="voltarPesquisa()">⬅️<span>Voltar para
+          Pesquisa</span></a>
+      <button class="btn btn-mapa" onclick="abrirRota()">🗺️<span>Ver Rota</span></button>
+    </div>
+  </main>
+
+
+  <!-- Modal Perfil Completo do Comerciante -->
+  <div id="modalPerfil" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal()">&times;</span>
+
+      {% set c = produto.comerciante %}
+
+      <!-- Foto do Comerciante -->
+      {% set foto = c['foto_perfil'] or '' %}
+      {% if foto[:7] == 'static/' %}
+      {% set foto = foto[7:] %}
+      {% endif %}
+      <div style="text-align:center; margin-bottom:16px;">
+        <img src="{{ url_for('static', filename=foto if foto else 'img/sem-imagem.png') }}" alt="{{ c['nome'] }}">
+      </div>
+
+      <!-- Nome e Status -->
+      <h2>{{ c['nome'] }}</h2>
+      <p style="color:#777;">🏷️ {{ c['status']|capitalize if c['status'] else 'Ativo' }}</p>
+      <hr style="margin: 10px 0 16px 0;">
+
+      <!-- Contatos -->
+      <p>📧 <strong>E-mail principal:</strong> {% if c['email'] %}<a href="mailto:{{ c['email'] }}">{{ c['email']
+          }}</a>{% else %}—{% endif %}</p>
+      <p>📧 <strong>E-mail secundário:</strong> {% if c['email_secundario'] %}<a
+          href="mailto:{{ c['email_secundario'] }}">{{ c['email_secundario'] }}</a>{% else %}—{% endif %}</p>
+      <p>💬 <strong>WhatsApp:</strong> {% if c['whatsapp'] %}<a
+          href="https://wa.me/55{{ c['whatsapp']|replace(' ','')|replace('-','') }}" target="_blank">{{ c['whatsapp']
+          }}</a>{% else %}—{% endif %}</p>
+
+      <!-- Localização -->
+      <p>📍 <strong>Cidade:</strong> {{ c['cidade'] or '—' }}, <strong>Estado:</strong> {{ c['estado'] or '—' }}</p>
+      {% if c['endereco_logradouro'] %}
+      <p>🏠 <strong>Endereço:</strong> {{ c['endereco_logradouro'] }}, {{ c['endereco_numero'] or '' }}{% if
+        c['endereco_complemento'] %} – {{ c['endereco_complemento'] }}{% endif %}{% if c['cep'] %} – CEP {{ c['cep']
+        }}{% endif %}</p>
+      {% endif %}
+
+      <!-- Entrega e Aprovação -->
+      <p>🚚 <strong>Faz entrega?</strong> {{ 'Sim' if c['faz_entrega'] else 'Não' }}</p>
+      <p>✅ <strong>Aprovado:</strong> {{ 'Sim' if c['aprovado'] else 'Não' }}</p>
+
+      <!-- Horário de Funcionamento -->
+      {% if c['horario_funcionamento'] %}
+      <p>⏰ <strong>Horário de Funcionamento:</strong></p>
+      <ul style="list-style:none; padding-left:0;">
+        {% set dias_ordem = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'] %}
+        {% for dia in dias_ordem %}
+        {% set horas = c['horario_funcionamento'].get(dia, {}) %}
+        <li>
+          {{ dia }}:
+          {% if horas.get('fechado') %}
+          Fechado
+          {% elif horas.get('inicio') and horas.get('fim') %}
+          {{ horas['inicio'] }} – {{ horas['fim'] }}
+          {% else %}
+          Não informado
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <!-- Dias Especiais -->
+      {% if c['dias_especiais'] %}
+      <p>📅 <strong>Dias Especiais:</strong></p>
+      <ul style="list-style:none; padding-left:0;">
+        {% set dias_ordem = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'] %}
+        {% for dia in dias_ordem %}
+        {% if c['dias_especiais'].get(dia) %}
+        <li>{{ dia }}: {{ c['dias_especiais'][dia] or '—' }}</li>
+        {% endif %}
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <!-- Redes Sociais -->
+      {% if c['redes_sociais'] %}
+      <p>🌐 <strong>Redes Sociais:</strong></p>
+      <ul style="list-style:none; padding-left:0;">
+        {% for rede, link in c['redes_sociais'].items() %}
+        <li><a href="{{ link }}" target="_blank">{{ rede|capitalize }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <!-- Mapa -->
+      {% if c['latitude'] and c['longitude'] %}
+      <div style="text-align:center; margin-top:22px;">
+        <a href="https://www.google.com/maps/search/?api=1&query={{ c['latitude'] }},{{ c['longitude'] }}"
+          target="_blank"
+          style="display:inline-block; background:#007bff; color:white; text-decoration:none; padding:10px 22px; border-radius:10px;">🗺️
+          Ver no Mapa</a>
+      </div>
+      {% endif %}
+
+      <!-- Data de Cadastro -->
+      <p style="margin-top:10px; color:#999;">
+        📅 Cadastrado em:
+        {{ c['data_cadastro'][:10] if c['data_cadastro'] else '—' }}
+      </p>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663. Envie apenas mensagens.
+  </footer>
+
+  <script>
+    // ---------- Modal Perfil ----------
+    function openModal() {
+      document.getElementById('modalPerfil').style.display = 'flex';
+    }
+    function closeModal() {
+      document.getElementById('modalPerfil').style.display = 'none';
+    }
+    window.onclick = function (event) {
+      const modal = document.getElementById('modalPerfil');
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
+
+    // ---------- Voltar para Pesquisa ----------
+    function voltarPesquisa() {
+      if (history.length > 1) {
+        history.back();
+        setTimeout(() => {
+          const scrollY = sessionStorage.getItem('scrollPos');
+          if (scrollY !== null) {
+            window.scrollTo(0, parseInt(scrollY));
+            sessionStorage.removeItem('scrollPos');
+          }
+        }, 100);
+      } else {
+        window.location.href = "/";
+      }
+    }
+
+    // ---------- Abrir Rota ----------
+    function abrirRota() {
+      const latComerciante = parseFloat("{{ produto.comerciante['latitude'] or 'nan' }}");
+      const lngComerciante = parseFloat("{{ produto.comerciante['longitude'] or 'nan' }}");
+
+      if (isNaN(latComerciante) || isNaN(lngComerciante)) {
+        alert('Localização do comerciante não disponível.');
+        return;
+      }
+
+      function abrirMapaComRota(latU, lngU) {
+        const rotaURL = `https://www.google.com/maps/dir/?api=1&origin=${latU},${lngU}&destination=${latComerciante},${lngComerciante}`;
+        window.open(rotaURL, '_blank');
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => abrirMapaComRota(pos.coords.latitude, pos.coords.longitude),
+          err => solicitarLocalizacaoManual(latComerciante, lngComerciante)
+        );
+      } else {
+        solicitarLocalizacaoManual(latComerciante, lngComerciante);
+      }
+    }
+
+    function solicitarLocalizacaoManual(latC, lngC) {
+      const cidade = prompt("Informe sua cidade para traçar a rota:");
+      if (cidade) {
+        const rotaURL = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(cidade)}&destination=${latC},${lngC}`;
+        window.open(rotaURL, '_blank');
+      } else {
+        alert("Sem sua localização, não é possível traçar a rota 😕");
+      }
+    }
+  </script>
+
+</body>
+
+</html>

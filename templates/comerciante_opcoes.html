@@ -1,0 +1,180 @@
+a<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Área do Comerciante - Preço Mais Barato</title>
+  <style>
+    :root{
+      --primary:#2563eb;
+      --accent:#10b981;
+      --bg-gradient:linear-gradient(135deg, #2563eb, #10b981);
+      --muted:#6b7280;
+      --card-bg:#ffffff;
+    }
+    *{box-sizing:border-box;}
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg-gradient);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      color: #fff;
+      align-items: center;
+      text-align: center;
+    }
+    header {
+      margin-top: 20px;
+      margin-bottom: 20px;
+      animation: fadeInDown 600ms ease;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      margin: 0;
+      font-weight: 800;
+      text-shadow: 1px 1px 6px rgba(0,0,0,0.35);
+    }
+    header p {
+      font-size: 1.1rem;
+      margin-top: 8px;
+      color: #e0f7f4;
+    }
+    .bem-vindo {
+      font-size: 1.2rem;
+      margin: 15px 0;
+      color: #ffeb3b;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      animation: pulse 2s infinite;
+    }
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      max-width: 1000px;
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+    .card {
+      flex: 1 1 400px;
+      background: var(--card-bg);
+      padding: 28px 24px;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+      color: var(--primary);
+      min-width: 300px;
+      animation: fadeInUp 700ms ease;
+      text-align: center;
+    }
+    .card p {
+      font-size: 1rem;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      color: var(--muted);
+      text-align: left;
+    }
+    .btn {
+      display: block;
+      background: var(--primary);
+      color: white;
+      padding: 14px 0;
+      margin: 10px 0;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      box-shadow: 0 5px 12px rgba(0,0,0,0.15);
+    }
+    .btn:hover {
+      background: #1e40af;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(16,185,129,0.4);
+    }
+    .btn.accent {
+      background: var(--accent);
+    }
+    .vantagens {
+      flex: 1 1 400px;
+      background: rgba(255,255,255,0.95);
+      padding: 24px;
+      border-radius: 16px;
+      color: #111;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      text-align: left;
+      min-width: 300px;
+      animation: fadeInUp 800ms ease;
+    }
+    .vantagens h2 {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+    .vantagens ul {
+      list-style: disc;
+      padding-left: 20px;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+    .vantagens li strong {
+      color: var(--accent);
+    }
+    footer {
+      margin-top: auto;
+      font-size: 14px;
+      color: #f0f0f0;
+      padding: 15px 0;
+      width: 100%;
+      text-align: center;
+      background: rgba(0,0,0,0.2);
+      user-select: none;
+    }
+    @keyframes fadeInDown {from{opacity:0; transform:translateY(-15px);} to{opacity:1; transform:none;}}
+    @keyframes fadeInUp {from{opacity:0; transform:translateY(15px);} to{opacity:1; transform:none;}}
+    @keyframes pulse {0%,100%{ transform: scale(1);} 50%{ transform: scale(1.05);}}
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Área do Comerciante</h1>
+    <p>Gerencie sua conta, cadastre produtos e conquiste clientes!</p>
+    <div class="bem-vindo">Seja bem-vindo, Comerciante!</div>
+  </header>
+
+  <main>
+    <div class="card">
+      <p>
+        Aqui você pode criar sua conta, fazer login e começar a divulgar seus produtos na plataforma Preço Mais Barato.
+      </p>
+
+      <!-- Botões principais -->
+      <a href="{{ url_for('comerciante.comerciante_cadastro') }}" class="btn">📝 Criar Conta</a>
+<a href="{{ url_for('comerciante.comerciante_login') }}" class="btn">🔑 Login</a>
+      <a href="{{ url_for('index.index') }}" class="btn accent">⬅️ Voltar</a>
+    </div>
+
+    <div class="vantagens">
+      <h2>Vantagens de divulgar seus produtos</h2>
+      <ul>
+        <li><strong>🛒 Seu catálogo online aberto 24h por dia</strong> Mostre seus produtos para toda a cidade, mesmo quando seu comércio estiver fechado.
+O aplicativo funciona como uma vitrine digital, onde qualquer pessoa pode ver seus preços, endereço e contato direto — tudo isso sem você precisar gastar com anúncios.</li>
+        <li><strong>📍 Seus produtos nas mãos de quem está mais perto</strong> Quando alguém busca um produto, o app mostra as opções mais próximas e vantajosas.
+Assim, o cliente encontra você antes dos concorrentes, mesmo que o preço seja o mesmo — porque a proximidade conta como economia real.</li>
+        <li><strong>💡 O aplicativo que todo cliente vai usar</strong> As pessoas estão começando a pesquisar preços sem sair de casa — e o seu mercado pode ser o primeiro que elas veem.
+Estar no Preço Mais Barato é garantir presença onde o consumidor realmente procura: no celular dele.</li>
+      </ul>
+    </div>
+  </main>
+
+  <footer>
+    Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663. Envie apenas mensagens.
+  </footer>
+
+</body>
+</html>

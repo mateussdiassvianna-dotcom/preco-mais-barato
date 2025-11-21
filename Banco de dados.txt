@@ -1,0 +1,4 @@
+Defina uma senha para o usuário postgres.
+
+Lembre-se da porta padrão: 5432.   
+5829 senha

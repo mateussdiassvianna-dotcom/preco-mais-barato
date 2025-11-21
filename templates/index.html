@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🌍 Preço Mais Barato</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --accent: #10b981;
+      --bg-gradient: linear-gradient(135deg, #2563eb, #10b981);
+      --muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg-gradient);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      animation: fadeIn 1s ease;
+    }
+
+    header { margin: 40px 0 25px; animation: fadeInDown 0.8s ease; cursor: pointer; }
+    header h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-shadow: 1px 2px 6px rgba(0,0,0,0.35);
+    }
+
+    main { max-width: 640px; width: 100%; }
+
+    .intro {
+      font-size: 1.2rem;
+      margin-bottom: 35px;
+      line-height: 1.6;
+      color: #d1fae5;
+      animation: fadeInUp 0.9s ease;
+    }
+    .intro strong { color: #ffeb3b; }
+
+    .bloco {
+      background: white;
+      color: var(--primary);
+      border-radius: 16px;
+      padding: 22px 26px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      text-align: left;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .bloco::after {
+      content: "";
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 4px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    .bloco strong { color: var(--accent); }
+    .bloco:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 24px rgba(16,185,129,0.5);
+    }
+    .bloco:hover::after { transform: scaleX(1); }
+
+    .botoes {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+    .btn {
+      background: white;
+      color: var(--primary);
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-decoration: none;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      min-width: 180px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .btn:hover {
+      background: var(--accent);
+      color: white;
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 10px 22px rgba(16,185,129,0.6);
+    }
+
+    footer {
+      margin-top: 60px;
+      font-size: 14px;
+      color: #e0f2f1;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      animation: fadeInUp 1s ease;
+    }
+
+    .admin-box {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      text-decoration: none;
+      z-index: 1000;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .admin-box:hover {
+      background: rgba(0,0,0,0.9);
+      transform: translateY(-2px);
+    }
+
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes fadeInDown { from{opacity:0; transform:translateY(-20px);} to{opacity:1; transform:none;} }
+    @keyframes fadeInUp { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Preço Mais Barato</h1>
+  </header>
+
+  <main>
+    <p class="intro">
+       De <strong>gasolina</strong> ao <strong>cimento</strong>, do <strong>gás</strong> ao <strong>pãozinho</strong>, da <strong>ração pro gado</strong> ao <strong>sabão em pó</strong> — tudo está aqui.<br>
+Chega de adivinhar onde comprar: em segundos você sabe quem vende mais barato, quem está perto e quem entrega. 🚀<br>
+Um sistema que ninguém nunca te deu, mas que você sempre precisou.
+    </p>
+
+    <div class="bloco" onclick="location.href='{{ url_for('consumidor.consumidor_home') }}'">
+    👤 <strong>Consumidor</strong><br>
+Quantas vezes você já pagou mais caro sem nem saber? Agora acabou.<br>
+Com o <strong>Preço Mais Barato</strong>, em segundos você descobre onde realmente vale a pena comprar — mercado, combustível, construção, o que quiser.<br>
+Sem cadastro, sem burocracia, sem dor de cabeça: é só abrir o app e pesquisar. ⚡<br>
+<strong>Inteligência que coloca o poder de escolha na sua mão. Quem usa, economiza.
+    </div>
+
+    <div class="bloco" onclick="location.href='{{ url_for('comerciante.comerciante_opcoes') }}'">
+      🛒 <strong>Comerciante</strong><br>
+Enquanto outros esperam o cliente entrar na loja, aqui você coloca sua vitrine na frente de toda a cidade.<br>
+Quanto mais produtos você cadastra, mais vezes aparece — seja pelo <strong>preço</strong>, pela <strong>distância</strong> ou pela <strong>entrega</strong>. 📈<br>
+É visibilidade, credibilidade e novas vendas chegando sem você gastar em propaganda.<br>
+Quem não está aqui, está ficando pra trás.
+    </div>
+
+    <div class="botoes">
+      <a href="{{ url_for('consumidor.consumidor_home') }}" class="btn">Sou Consumidor</a>
+      <a href="{{ url_for('comerciante.comerciante_opcoes') }}" class="btn">Sou Comerciante</a>
+    </div>
+  </main>
+
+  <footer>
+    Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663. Envie apenas mensagens.
+  </footer>
+
+  <a href="{{ url_for('admin.admin_login') }}" class="admin-box">Admin</a>
+
+  <!-- Easter Egg Script -->
+  <script>
+    // Pega o caminho correto da imagem pelo Flask
+    const fotoFilho = "{{ url_for('static', filename='img/filho.png') }}";
+    const nomeFilho = "Lucas"; // <<< Troque pelo nome do seu filho
+
+    const titulo = document.querySelector('header h1');
+    let tapCount = 0;
+    let tapTimeout;
+
+    titulo.addEventListener('click', () => {
+      tapCount++;
+
+      if (tapCount === 3) {
+        tapCount = 0;
+        clearTimeout(tapTimeout);
+
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(0,0,0,0.85)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = 9999;
+        overlay.style.color = 'white';
+        overlay.style.textAlign = 'center';
+        overlay.style.padding = '20px';
+        overlay.style.animation = 'fadeIn 0.5s ease';
+
+        const img = document.createElement('img');
+        img.src = fotoFilho;
+        img.style.maxWidth = '300px';
+        img.style.borderRadius = '20px';
+        img.style.marginBottom = '20px';
+        img.style.boxShadow = '0 8px 20px rgba(0,0,0,0.5)';
+
+        const mensagem = document.createElement('p');
+        mensagem.innerHTML = `Esse app nasceu para mudar a vida das pessoas.<br> E tudo começou com a inspiração desse pequeno: <strong>Kaio</strong> 💙🚀<br><br>Você encontrou o easter egg!`;
+        mensagem.style.fontSize = '1.3rem';
+        mensagem.style.lineHeight = '1.5';
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Fechar';
+        btn.style.marginTop = '20px';
+        btn.style.padding = '10px 20px';
+        btn.style.fontSize = '1rem';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '10px';
+        btn.style.cursor = 'pointer';
+        btn.style.background = '#10b981';
+        btn.style.color = 'white';
+        btn.addEventListener('click', () => document.body.removeChild(overlay));
+
+        overlay.appendChild(img);
+        overlay.appendChild(mensagem);
+        overlay.appendChild(btn);
+
+        document.body.appendChild(overlay);
+      }
+
+      clearTimeout(tapTimeout);
+      tapTimeout = setTimeout(() => { tapCount = 0; }, 600);
+    });
+  </script>
+</body>
+</html>

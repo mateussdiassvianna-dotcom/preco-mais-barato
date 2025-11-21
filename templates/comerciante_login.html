@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login do Comerciante - Preço Mais Barato</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      color: #fff;
+      text-align: center;
+      overflow-x: hidden;
+      padding: 10px;
+    }
+    header {
+      margin-bottom: 20px;
+      animation: fadeInDown 1s ease;
+    }
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-shadow: 1px 1px 8px rgba(0,0,0,0.4);
+    }
+    header p {
+      font-size: 1.1rem;
+      margin-top: 8px;
+      color: #e0f7f4;
+    }
+    .bem-vindo {
+      font-size: 1.2rem;
+      margin: 15px 0;
+      color: #ffeb3b;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      animation: pulse 2s infinite;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      gap: 30px;
+      width: 100%;
+      max-width: 900px;
+      padding: 0 20px;
+    }
+    main {
+      background: #fff;
+      flex: 1;
+      border-radius: 20px;
+      padding: 35px 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      color: #2563eb;
+      text-align: left;
+      animation: fadeInUp 1s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    main::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: rgba(37,99,235,0.1);
+      transform: rotate(25deg);
+      pointer-events: none;
+    }
+    main label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .input-group {
+      position: relative;
+    }
+    main input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+    main input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 8px rgba(37,99,235,0.5);
+      outline: none;
+    }
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      color: #555;
+      transition: 0.3s;
+      user-select: none;
+    }
+    .toggle-password:hover { color: #2563eb; }
+    .btn {
+      display: block;
+      background: #2563eb;
+      color: #fff;
+      padding: 15px 0;
+      margin: 20px 0 10px 0;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+    }
+    .btn:hover {
+      background: #1e40af;
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(16,185,129,0.5);
+    }
+    .btn-secundario { background: #10b981; }
+    .btn-warning { background: #f59e0b; }
+    .mensagens-flash {
+      list-style: none;
+      margin-bottom: 15px;
+      padding: 0;
+    }
+    .mensagens-flash li {
+      position: relative;
+      padding: 12px 35px 12px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      cursor: pointer;
+      animation: slideIn 0.5s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .mensagens-flash li.erro { background: #f87171; color: #fff; }
+    .mensagens-flash li.sucesso { background: #10b981; color: #fff; }
+    .mensagens-flash li.aviso { background: #facc15; color: #000; }
+    .mensagens-flash li .close-msg {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: bold;
+      cursor: pointer;
+      color: inherit;
+    }
+    .info-box {
+      flex: 1;
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fef3c7;
+      border-radius: 16px;
+      padding: 25px;
+      font-size: 15px;
+      line-height: 1.5;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      text-align: left;
+      animation: fadeInUp 1s ease;
+      max-height: fit-content;
+    }
+    footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #eee;
+      text-align: center;
+      user-select: none;
+      animation: fadeIn 1.5s ease;
+    }
+    @media (max-width: 900px) { .container { flex-direction: column; } }
+    .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+    .modal-content { background: #fff; color: #2563eb; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: left; animation: fadeInUp 0.4s ease; position: relative; }
+    .close { position: absolute; top: 10px; right: 15px; font-size: 20px; cursor: pointer; color: #888; }
+    .close:hover { color: #2563eb; }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+    @keyframes shake { 0%{transform:translateX(0);}25%{transform:translateX(-5px);}50%{transform:translateX(5px);}75%{transform:translateX(-5px);}100%{transform:translateX(0);} }
+    @keyframes slideIn { from { opacity:0; transform: translateX(-20px); } to { opacity:1; transform: translateX(0); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Login do Comerciante</h1>
+  <p>Entre com suas credenciais para acessar sua conta.</p>
+  <div class="bem-vindo">Seja bem-vindo, Comerciante!</div>
+</header>
+
+<div class="container">
+  <main>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="mensagens-flash">
+          {% for category, message in messages %}
+            {% if category == 'error' %}
+              <li class="erro">
+                ⚠️ {{ message }}
+                <span class="close-msg" onclick="this.parentElement.style.display='none';">&times;</span>
+              </li>
+            {% elif category == 'success' %}
+              <li class="sucesso">
+                ✅ {{ message }}
+                <span class="close-msg" onclick="this.parentElement.style.display='none';">&times;</span>
+              </li>
+            {% elif category == 'warning' %}
+              <li class="aviso">
+                ⚠️ {{ message }}
+                <span class="close-msg" onclick="this.parentElement.style.display='none';">&times;</span>
+              </li>
+            {% else %}
+              <li>
+                {{ message }}
+                <span class="close-msg" onclick="this.parentElement.style.display='none';">&times;</span>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Login -->
+    <form id="loginComerciante" method="POST" action="{{ url_for('comerciante.comerciante_login') }}">
+      <label for="email">E-mail</label>
+      <div class="input-group">
+        <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}" required placeholder="exemplo@dominio.com">
+      </div>
+
+      <label for="senha">Senha</label>
+      <div class="input-group">
+        <input type="password" id="senha" name="senha" required placeholder="Digite sua senha">
+        <span class="toggle-password" onclick="toggleSenha('senha', this)">👁️</span>
+      </div>
+
+      <button type="submit" class="btn">Entrar</button>
+    </form>
+
+    <!-- abre modal que agora usa JS para chamar o Supabase -->
+    <span class="btn btn-warning" onclick="openModal()">Esqueci minha senha</span>
+
+    <a href="{{ url_for('comerciante.comerciante_opcoes') }}" class="btn btn-secundario">Voltar</a>
+  </main>
+
+  <div class="info-box">
+    <strong>Atenção ao cadastrar seus produtos:</strong>
+    <ul>
+      <li>Mantenha preços e informações sempre corretos. Produtos confiáveis atraem mais clientes e fazem você se destacar na plataforma.</li>
+      <li>Imagens reais e descrições precisas mostram profissionalismo. Quanto melhor você apresenta seu produto, mais fácil é vender.</li>
+      <li>Clientes valorizam rapidez e atenção. Responda rápido e aumente suas chances de pedidos pelo WhatsApp.</li>
+      <li>Endereço, telefone e horário atualizados ajudam o cliente a confiar em você e evitam frustrações.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Modal de Reset -->
+<div id="resetModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3>Redefinição de senha</h3>
+    <form id="resetForm">
+      <label for="resetEmail">Digite seu e-mail cadastrado</label>
+      <input type="email" id="resetEmail" required placeholder="seuemail@dominio.com">
+      <button type="submit" class="btn btn-secundario">Enviar link de redefinição</button>
+      <p id="resetMsg" style="margin-top:10px; color: #2563eb;"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para nova senha -->
+<div id="newPassModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <span class="close" onclick="closeNewPassModal()">&times;</span>
+    <h3>Defina sua nova senha</h3>
+    <p>Se você veio pelo link de recuperação do e-mail, digite a nova senha abaixo.</p>
+    <form id="newPassForm">
+      <label for="newPassword">Nova senha</label>
+      <input type="password" id="newPassword" required placeholder="Nova senha (mín. 6 caracteres)">
+      <button type="submit" class="btn btn-warning">Salvar nova senha</button>
+      <p id="newPassMsg" style="margin-top:10px; color:#2563eb;"></p>
+    </form>
+  </div>
+</div>
+
+<footer>
+  Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663. Envie apenas mensagens.
+</footer>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const SUPABASE_URL = 'https://fzlxteusmakgjmurtrur.supabase.co'
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bHh0ZXVzbWFrZ2ptdXJ0cnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MTM0MzQsImV4cCI6MjA3NDE4OTQzNH0.NRrhJYRJmboCmBtUfgx4nSUW2b_7PAB8Qg6hYM0jjjU'
+  const REDIRECT_TO = 'http://127.0.0.1:5000/comerciante/login'
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+  window.toggleSenha = function(id, el){
+    const input = document.getElementById(id)
+    if(!input) return
+    if(input.type === 'password'){
+      input.type = 'text'
+      el.textContent = '🙈'
+    } else {
+      input.type = 'password'
+      el.textContent = '👁️'
+    }
+  }
+
+  window.openModal = function(){ document.getElementById("resetModal").style.display = "flex"; }
+  window.closeModal = function(){
+    document.getElementById("resetModal").style.display = "none";
+    document.getElementById("resetMsg").innerText = "";
+    document.getElementById("resetForm").reset();
+  }
+
+  window.closeNewPassModal = function(){
+    document.getElementById("newPassModal").style.display = "none";
+    document.getElementById("newPassMsg").innerText = "";
+    document.getElementById("newPassForm").reset();
+  }
+
+  document.getElementById('resetForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const email = document.getElementById('resetEmail').value.trim()
+    const msgEl = document.getElementById('resetMsg')
+    if(!email){ msgEl.innerText = 'Digite um e-mail válido.'; return; }
+
+    msgEl.innerText = 'Enviando e-mail...'
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: REDIRECT_TO
+      })
+      if (error) {
+        msgEl.innerText = 'Erro: ' + error.message
+      } else {
+        msgEl.innerText = 'E-mail enviado! Verifique sua caixa de entrada (e spam).'
+      }
+    } catch (err) {
+      msgEl.innerText = 'Erro na rede ou no Supabase: ' + (err.message || err)
+    }
+  })
+
+  document.getElementById('newPassForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const newPass = document.getElementById('newPassword').value
+    const msgEl = document.getElementById('newPassMsg')
+    if(!newPass || newPass.length < 6){ msgEl.innerText = 'Senha precisa ter pelo menos 6 caracteres.'; return; }
+
+    msgEl.innerText = 'Atualizando senha...'
+    try {
+      const { data, error } = await supabase.auth.updateUser({ password: newPass })
+      if (error) {
+        msgEl.innerText = 'Erro: ' + error.message + '. Se persistir, me avisa que te explico a opção servidor.'
+      } else {
+        msgEl.innerText = 'Senha atualizada com sucesso! Agora faça login com sua nova senha.'
+      }
+    } catch (err) {
+      msgEl.innerText = 'Erro na rede ou no Supabase: ' + (err.message || err)
+    }
+  })
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      document.getElementById('newPassModal').style.display = 'flex'
+    }
+  })
+
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('type') === 'recovery' || params.get('access_token')) {
+    document.getElementById('newPassModal').style.display = 'flex'
+  }
+</script>
+
+</body>
+</html>

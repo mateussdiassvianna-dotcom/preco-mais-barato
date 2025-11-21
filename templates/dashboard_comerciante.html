@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Comerciante - Preço Mais Barato</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #2563eb;
+    }
+
+    header {
+      width: 100%;
+      padding: 30px 20px;
+      color: white;
+      text-align: center;
+      text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.2rem;
+    }
+
+    header p {
+      margin: 10px 0 0;
+      font-size: 1.1rem;
+      color: #e0f7f4;
+    }
+
+    main {
+      width: 95%;
+      max-width: 650px;
+      margin-top: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .comercio {
+      background: white;
+      padding: 30px 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 100%;
+      position: relative;
+      transition: transform 0.3s ease;
+    }
+
+    .comercio:hover {
+      transform: translateY(-3px);
+    }
+
+    .comercio img {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 20px;
+      border: 4px solid #10b981;
+    }
+
+    .comercio h2 {
+      margin: 0;
+      color: #10b981;
+      font-size: 1.9rem;
+    }
+
+    .comercio p {
+      margin: 6px 0;
+      font-size: 1rem;
+      color: #444;
+    }
+
+    .btn-green {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 12px 25px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.3s ease, transform 0.2s ease;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-green:hover {
+      background: #059669;
+      transform: translateY(-2px);
+    }
+
+    .btn-container {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+
+    input.edit-input,
+    select.edit-input,
+    textarea.edit-input {
+      width: 95%;
+      padding: 10px;
+      margin: 8px 0 15px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      width: 95%;
+      margin: 5px auto;
+      font-weight: bold;
+      color: #2563eb;
+    }
+
+    .edit-buttons {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .edit-buttons button {
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      background: #10b981;
+    }
+
+    .btn-cancel {
+      background: #9ca3af;
+    }
+
+    footer {
+      font-size: 14px;
+      color: #c9f0ec;
+      padding: 20px 0;
+      width: 100%;
+      text-align: center;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Toast */
+    .toast {
+      visibility: hidden;
+      min-width: 250px;
+      margin-left: -125px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 8px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1000;
+      left: 50%;
+      bottom: 30px;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.5s, bottom 0.5s;
+    }
+
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+      bottom: 50px;
+    }
+
+    .toast.success {
+      background-color: #10b981;
+    }
+
+    .toast.error {
+      background-color: #ef4444;
+    }
+
+    /* === AVISO LATERAL SOBRE PREÇOS === */
+    .aviso-precos {
+      position: fixed;
+      top: 140px;
+      right: 15px;
+      width: 260px;
+      background: #fff8c7;
+      border-left: 8px solid #f59e0b;
+      padding: 18px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+      color: #b45309;
+      font-size: 0.95rem;
+      z-index: 999;
+    }
+
+    .aviso-precos h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .aviso-precos ul {
+      margin: 10px 0 0 0;
+      padding-left: 18px;
+    }
+
+    .aviso-precos ul li {
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .aviso-precos {
+        display: none;
+      }
+    }
+
+    /* Botão lateral esquerda */
+    .btn-tutorial-left {
+      position: fixed;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      background: #ffffff;
+      color: #0f172a;
+      border: none;
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+      transition: transform 0.16s ease, background 0.2s ease;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-tutorial-left .icon {
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-tutorial-left:hover {
+      transform: translateY(-50%) scale(1.02);
+      background: #fffef0;
+    }
+
+    /* Hide on small screens */
+    @media (max-width: 900px) {
+      .btn-tutorial-left {
+        display: none;
+      }
+    }
+
+    /* MODAL DE TUTORIAL */
+    .modal-tutorial {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.55);
+      padding: 40px 20px;
+      box-sizing: border-box;
+    }
+
+    .modal-content {
+      background: white;
+      margin: auto;
+      padding: 22px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 820px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+      animation: zoomIn 0.22s ease;
+      color: #111827;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    @keyframes zoomIn {
+      from {
+        transform: scale(0.96);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-content h2 {
+      margin-top: 0;
+      color: #0b5dd7;
+      font-size: 1.4rem;
+    }
+
+    .modal-content h3 {
+      margin-bottom: 6px;
+      color: #059669;
+    }
+
+    .fechar {
+      float: right;
+      font-size: 28px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #374151;
+      margin-top: -8px;
+    }
+
+    .fechar:hover {
+      color: #000;
+    }
+
+    /* Código exemplo */
+    .code-sample {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+      font-size: 0.95rem;
+      color: #0f172a;
+      overflow-x: auto;
+      margin: 8px 0 12px 0;
+    }
+
+    .btn-inline {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Botão lateral (esquerda) -->
+  <button class="btn-tutorial-left" onclick="abrirTutorial()" aria-label="Como usar a plataforma">
+    <span class="icon">?</span>
+    <span>Como usar</span>
+  </button>
+
+  <header>
+    <h1>👋 Bem-vindo de volta, <span style="color:#10b981">{{ usuario.nome }}</span>!</h1>
+    <p>Gerencie seu comércio, atualize suas informações e conquiste novos clientes.</p>
+  </header>
+
+  <!-- === AVISO LATERAL FIXO === -->
+  <div class="aviso-precos">
+    <h3>⚠️ Atenção Máxima </h3>
+
+    <p><strong>Preços desatualizados podem levar ao BANIMENTO da sua conta.</strong></p>
+
+    <p>Mudou o preço na sua loja? <strong>Atualize aqui imediatamente.</strong></p>
+
+    <p>Use o botão <strong>Importar / Atualizar Produtos</strong> sempre que qualquer preço mudar.</p>
+
+    <ul>
+      <li>✔️ Evita reclamações</li>
+      <li>✔️ Mantém sua reputação</li>
+      <li>✔️ Garante confiança na plataforma</li>
+    </ul>
+  </div>
+
+  <main>
+    <!-- Alerta de perfil incompleto -->
+    <div id="alertaPerfil"
+      style="display:none; background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:15px 20px; border-radius:10px; width:100%; max-width:650px; margin-bottom:20px; box-shadow:0 3px 8px rgba(0,0,0,0.1);">
+      <strong>⚠️ Informações do perfil incompletas!</strong>
+      <p>Algumas informações importantes ainda não foram preenchidas. Complete seu perfil para deixar seu comércio mais
+        atrativo.</p>
+      <div style="display:flex; gap:10px;">
+        <button id="btnCompletarPerfil"
+          style="background:#10b981; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">✏️
+          Completar agora</button>
+        <button onclick="fecharAlerta()"
+          style="background:#6b7280; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">OK,
+          entendi</button>
+      </div>
+    </div>
+
+    <!-- Perfil do comércio -->
+    <div class="comercio" id="perfilComercio">
+
+      {% if usuario.foto_perfil %}
+      <!-- Foto vindo do Supabase -->
+      <img src="{{ usuario.foto_perfil }}" alt="Foto do Comércio" id="fotoPerfil"
+        onclick="abrirFotoAmpliada('{{ usuario.foto_perfil }}')">
+      {% else %}
+      <!-- Foto padrão -->
+      <img src="/static/img/sem-imagem.png" class="foto-perfil"
+        onclick="abrirFotoAmpliada('/static/img/sem-imagem.png')">
+      {% endif %}
+
+      <div id="perfilDados">
+        <h2>{{ usuario.nome }}</h2>
+        <p><strong>Cidade:</strong> {{ usuario.cidade }}, {{ usuario.estado }}</p>
+        <p><strong>Telefone/WhatsApp:</strong> {{ usuario.whatsapp }}</p>
+        <p><strong>Realiza entrega:</strong> {{ 'Sim' if usuario.faz_entrega else 'Não' }}</p>
+        <p><strong>Endereço:</strong>
+          {{ usuario.endereco_logradouro }}
+          {{ usuario.endereco_numero }}
+          {{ usuario.endereco_complemento }}
+        </p>
+        <p><strong>Localização:</strong>
+          Latitude: {{ usuario.latitude or '' }},
+          Longitude: {{ usuario.longitude or '' }}
+        </p>
+      </div>
+
+      <button class="btn-green" id="btnEditarPerfil" onclick="editarPerfil()">✏️ Editar Perfil</button>
+    </div>
+
+    <div class="btn-container">
+      <a href="{{ url_for('comerciante.meus_produtos') }}" class="btn-green">📦 Meus Produtos</a>
+      <a href="{{ url_for('comerciante.comerciante_logout') }}" class="btn-green">🚪 Sair</a>
+    </div>
+  </main>
+
+  <footer>
+    Criado pela Viana Tecnologia – Suporte via WhatsApp: (63) 9 8124-5663. Envie apenas mensagens.
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- ========== MODAL TUTORIAL (COM CONTEÚDO COMPLETO) ========== -->
+  <div id="modalTutorial" class="modal-tutorial" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+    <div class="modal-content" role="document">
+      <span class="fechar" onclick="fecharTutorial()" aria-label="Fechar">&times;</span>
+
+      <h2 id="tutorialTitle">📘 Tutorial Completo — Planilhas, Importar e Atualizar</h2>
+      <p class="muted">Guia claro, direto e prático para preparar sua planilha e enviar corretamente.</p>
+
+      <!-- RÁPIDO -->
+      <section style="margin-top:12px;">
+        <div class="section-title">
+          <h3>⚡ Rápido — Vá direto ao ponto</h3>
+        </div>
+        <ol>
+          <li><strong>Mexeu em preço na loja?</strong> Vá em <strong>Importar / Atualizar Produtos</strong> e envie sua
+            planilha.</li>
+          <li>É obrigatório ter a coluna <strong>Nome</strong> e a coluna <strong>Preço</strong>.</li>
+          <li>Depois do envio, abra o relatório baixado automaticamente nos <strong>Downloads</strong>.</li>
+        </ol>
+        <p class="muted">Dica: renomeie o arquivo antes de enviar, ex.: <em>produtos-loja-2025-11-18.xlsx</em>.</p>
+      </section>
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <!-- DETALHADO -->
+      <section>
+        <h3>1️⃣ Preparando sua planilha</h3>
+        <p>Ao exportar de outro sistema, normalmente vêm colunas como <em>Código</em>, <em>Descrição</em>,
+          <em>Nome</em>, <em>Valor</em>, etc.
+          Para nosso sistema funcionar, você só precisa garantir duas colunas:
+        </p>
+
+        <ul>
+          <li><strong>Nome</strong> — onde está o nome real do produto.</li>
+          <li><strong>Preço</strong> — valor numérico do produto.</li>
+        </ul>
+
+        <h4>Se a coluna vier com o nome errado</h4>
+        <p>
+          Se a coluna que contém o nome do produto estiver com outro título (ex.: “Descrição”), é só RENOMEAR para
+          <strong>Nome</strong>.<br>
+          Se existir uma coluna chamada <em>Nome</em> contendo apenas números (códigos), renomeie essa coluna para
+          <strong>Código</strong> e deixe o nome do produto na coluna correta como <strong>Nome</strong>.
+        </p>
+
+        <div style="margin-top:8px;">
+          <div class="section-title"><strong>Exemplo — errado</strong></div>
+          <div class="code-sample">Cabeçalho: Código | Valor | Desc<br>Linha: 12345 | R$ 12 | Arroz 1kg</div>
+
+          <div class="section-title" style="margin-top:8px;"><strong>Exemplo — correto</strong></div>
+          <div class="code-sample">Cabeçalho: Nome | Preço | Categoria<br>Linha: Arroz 1kg | 12,00 | Mercearia</div>
+        </div>
+
+        <p class="muted">Não precisa apagar colunas — apenas renomeie os cabeçalhos.</p>
+      </section>
+
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <section>
+        <h3>2️⃣ Importar × Atualizar — como cada um funciona</h3>
+
+        <h4>▶️ <strong>Importar Produtos</strong> (carrega tudo que estiver na planilha)</h4>
+        <ul>
+          <li>Lê todas as linhas com <strong>Nome</strong> + <strong>Preço</strong>.</li>
+          <li>Se o nome já existir no catálogo, ele trata como atualização.</li>
+          <li>Se for nome novo, ele adiciona o produto.</li>
+          <li>Use quando quiser enviar planilhas completas.</li>
+        </ul>
+
+        <h4>▶️ <strong>Atualizar Produtos</strong> (alterações apenas para produtos já existentes)</h4>
+        <ul>
+          <li>O sistema só olha produtos que JÁ existem no seu catálogo.</li>
+          <li><strong>Se o Nome existir → ele atualiza os campos enviados.</strong></li>
+          <li><strong>Se o Nome não existir → simplesmente ignora (não cria novo).</strong></li>
+        </ul>
+
+        <p class="muted"><strong>Resumo:</strong> Importar trabalha com tudo da planilha. Atualizar só mexe no que já
+          existe.</p>
+      </section>
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <section>
+        <h3>3️⃣ Mantendo sua planilha organizada</h3>
+        <p>O jeito mais rápido e seguro de trabalhar:</p>
+        <ol>
+          <li>Mantenha uma planilha-mestre onde os nomes nunca mudam.</li>
+          <li>Para alterar preço, edite apenas a coluna <strong>Preço</strong>.</li>
+          <li>Para novos produtos, adicione novas linhas.</li>
+          <li>Use <strong>Atualizar</strong> quando quiser alterar só preços dos produtos que já existem.</li>
+          <li>Use <strong>Importar</strong> quando quiser carregar tudo, incluindo novos itens.</li>
+        </ol>
+
+        <p class="muted">O sistema identifica o produto pelo <strong>Nome</strong>. O texto precisa ser igual.</p>
+      </section>
+
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <section>
+        <h3>4️⃣ Se o arquivo não importar — o que fazer</h3>
+        <p>Correções rápidas:</p>
+        <ol>
+          <li>Confirme que o arquivo está em <strong>.xlsx</strong>.</li>
+          <li>Veja se sua planilha tem as colunas <strong>Nome</strong> e <strong>Preço</strong>.</li>
+          <li>Preço deve ser número (12,50 ou 12.50).</li>
+          <li>Salve e reenvie.</li>
+          <li>Se estiver com dificuldade, envie apenas 10 linhas como teste.</li>
+        </ol>
+
+        <p class="muted">Após cada envio, o relatório é baixado automaticamente com o que foi processado ou rejeitado.
+        </p>
+      </section>
+
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <section>
+        <h3>5️⃣ Boas práticas úteis</h3>
+        <ul>
+          <li>Padronize nomes: “Arroz 1kg” sempre igual.</li>
+          <li>Não mude nomes antigos sem necessidade.</li>
+          <li>Evite espaços extras no nome.</li>
+          <li>Adicione foto e categoria para destaque.</li>
+          <li>Sempre veja o relatório após o envio.</li>
+        </ul>
+      </section>
+
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <section>
+        <h3>6️⃣ Resumo técnico — como o sistema reage</h3>
+        <ul>
+          <li><strong>Nome igual ao catálogo</strong> → atualiza os campos enviados.</li>
+          <li><strong>Nome novo</strong> → Importar adiciona; Atualizar ignora.</li>
+          <li><strong>Relatório</strong> baixa automaticamente com:
+            <ul>
+              <li>Linhas adicionadas</li>
+              <li>Linhas atualizadas</li>
+              <li>Linhas com erro e motivo</li>
+              <li>Orientações para ajustar</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+
+      <hr style="margin:14px 0; opacity:0.12;">
+
+
+      <section style="margin-bottom:6px;">
+        <h3>7️⃣ Problemas grandes — como resolver rápido</h3>
+        <p>Faça uma cópia da planilha, mantenha só 10 linhas e envie como teste.
+          Se continuar, chame o suporte via WhatsApp (somente mensagem): <strong>(63) 9 8124-5663</strong>.</p>
+      </section>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+        <button class="btn-inline" onclick="fecharTutorial()">Fechar</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Modal da foto ampliada -->
+  <div id="modalFoto" onclick="fecharFotoAmpliada()" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.8);
+  justify-content:center;
+  align-items:center;
+  z-index:999999;
+">
+    <img id="fotoAmpliada" src="" style="
+    max-width:90%;
+    max-height:90%;
+    border-radius:20px;
+    box-shadow:0 0 30px rgba(255,255,255,0.4);
+  ">
+  </div>
+  <div id="modalFoto" style="
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.85);
+  justify-content:center;
+  align-items:center;
+  z-index:999999;
+">
+    <img id="fotoAmpliada" src="" style="
+    max-width:90%;
+    max-height:90%;
+    border-radius:18px;
+  ">
+  </div>
+
+
+</body>
+
+</html>
+
+<script>
+  function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    toast.className = "toast " + type + " show";
+    toast.textContent = message;
+    setTimeout(() => { toast.classList.remove("show"); }, 3000);
+  }
+
+  function editarPerfil() {
+    const dados = document.getElementById('perfilDados');
+
+    const nome = {{ usuario.nome|default ("") | tojson
+  }};
+  const cidade = {{ usuario.cidade|default ("") | tojson }};
+  const estado = {{ usuario.estado|default ("") | tojson }};
+  const whatsapp = {{ usuario.whatsapp|default ("") | tojson }};
+  const faz_entrega = {{ usuario.faz_entrega|default (false) | tojson }};
+  const logradouro = {{ usuario.endereco_logradouro|default ("") | tojson }};
+  const numero = {{ usuario.endereco_numero|default ("") | tojson }};
+  const complemento = {{ usuario.endereco_complemento|default ("") | tojson }};
+
+  // 🔥 CORREÇÃO REAL OFICIAL 🔥
+  const latitude = {{ usuario.latitude|default (None) | tojson }};
+  const longitude = {{ usuario.longitude|default (None) | tojson }};
+
+  dados.innerHTML = `
+  <form id="formEditarPerfil" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:15px;">
+    
+    <!-- Nome -->
+    <label>Nome:</label>
+    <input type="text" class="edit-input" name="nome" value="${nome}" placeholder="Nome">
+
+    <!-- Cidade / Estado -->
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label>Cidade:</label>
+        <input type="text" class="edit-input" name="cidade" value="${cidade}" placeholder="Cidade">
+      </div>
+      <div style="flex:1;">
+        <label>Estado:</label>
+        <input type="text" class="edit-input" name="estado" value="${estado}" placeholder="Estado">
+      </div>
+    </div>
+
+    <!-- WhatsApp / E-mail Secundário -->
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label>Telefone/WhatsApp:</label>
+        <input type="tel" class="edit-input" name="whatsapp" id="whatsappInput"
+          value="${whatsapp}" placeholder="(63) 9 8124-5663" maxlength="15"
+          required pattern="^\\(\\d{2}\\) \\d \\d{4}-\\d{4}$"
+          title="Digite no formato (63) 9 8124-5663">
+      </div>
+      <div style="flex:1;">
+        <label>E-mail Secundário:</label>
+        <input type="email" class="edit-input" name="email_secundario"
+          value="{{ usuario.email_secundario or '' }}" placeholder="E-mail secundário">
+      </div>
+    </div>
+
+    <!-- CEP -->
+    <label>CEP:</label>
+    <input type="text" class="edit-input" name="cep" value="{{ usuario.cep or '' }}" placeholder="CEP">
+
+    <!-- Horário de Funcionamento -->
+<fieldset style="border:1px solid #ccc; border-radius:10px; padding:15px;">
+  <legend><strong>Horário de Funcionamento</strong></legend>
+  <div id="horariosContainer" style="display:flex; flex-direction:column; gap:10px;">
+    {% for dia in ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"] %}
+      <div class="horario-row" style="display:flex; gap:10px; align-items:center; list-style:none;">
+        <!-- Nome do dia -->
+        <span style="flex:1; font-weight:bold; text-transform:capitalize;">{{ dia }}</span>
+        <input type="hidden" name="dia_nome[]" value="{{ dia }}">
+
+        <!-- Hora de início -->
+        <input type="time" class="edit-input" name="horario_inicio[]"
+          value="{% if usuario.horario_funcionamento and dia in usuario.horario_funcionamento %}{{ usuario.horario_funcionamento[dia]['inicio'] }}{% endif %}"
+          style="flex:1;">
+
+        <span style="flex:0.2; text-align:center;">às</span>
+
+        <!-- Hora de fim -->
+        <input type="time" class="edit-input" name="horario_fim[]"
+          value="{% if usuario.horario_funcionamento and dia in usuario.horario_funcionamento %}{{ usuario.horario_funcionamento[dia]['fim'] }}{% endif %}"
+          style="flex:1;">
+
+        <!-- Checkbox: Dia fechado -->
+        <label style="display:flex; align-items:center; gap:5px; flex:1;">
+          <input type="checkbox" name="dia_fechado[]" value="{{ dia }}"
+          {% if usuario.horario_funcionamento and dia in usuario.horario_funcionamento and usuario.horario_funcionamento[dia].get('fechado', False) %}
+            checked
+          {% endif %}>
+          Fechado
+        </label>
+
+        <!-- Botão para limpar horários -->
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="limparHorario(this)">🧹</button>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Botão para adicionar dias especiais -->
+  <button type="button" class="btn btn-sm btn-success mt-2" onclick="adicionarDiaEspecial()">➕ Adicionar dia especial</button>
+</fieldset>
+
+    <!-- Descrição / Sobre nós -->
+    <label>Descrição / Sobre Nós:</label>
+    <textarea class="edit-input" name="descricao" placeholder="Fale sobre seu comércio" rows="6">{{ usuario.descricao or '' }}</textarea>
+
+    <!-- Redes Sociais -->
+    <fieldset style="border:1px solid #ccc; border-radius:10px; padding:15px;">
+      <legend><strong>Redes Sociais / Site</strong></legend>
+      <input type="text" class="edit-input" name="site" value="{{ usuario.redes_sociais.site if usuario.redes_sociais else '' }}" placeholder="Site">
+      <input type="text" class="edit-input" name="instagram" value="{{ usuario.redes_sociais.instagram if usuario.redes_sociais else '' }}" placeholder="Instagram">
+      <input type="text" class="edit-input" name="facebook" value="{{ usuario.redes_sociais.facebook if usuario.redes_sociais else '' }}" placeholder="Facebook">
+      <input type="text" class="edit-input" name="whatsapp_business" value="{{ usuario.redes_sociais.whatsapp if usuario.redes_sociais else '' }}" placeholder="WhatsApp Business">
+    </fieldset>
+
+    <!-- Realiza entrega -->
+    <label>Realiza entrega:</label>
+    <select class="edit-input" name="faz_entrega">
+      <option value="1" ${faz_entrega ? 'selected' : ''}>Sim</option>
+      <option value="0" ${!faz_entrega ? 'selected' : ''}>Não</option>
+    </select>
+
+    <!-- Endereço -->
+    <div style="display:flex; gap:10px;">
+      <div style="flex:2;">
+        <label>Logradouro:</label>
+        <input type="text" class="edit-input" name="endereco_logradouro" value="${logradouro}" placeholder="Logradouro">
+      </div>
+      <div style="flex:1;">
+        <label>Número:</label>
+        <input type="text" class="edit-input" name="endereco_numero" value="${numero}" placeholder="Número">
+      </div>
+      <div style="flex:1;">
+        <label>Complemento:</label>
+        <input type="text" class="edit-input" name="endereco_complemento" value="${complemento}" placeholder="Complemento">
+      </div>
+    </div>
+
+    <!-- Localização -->
+    <label>Localização (Latitude / Longitude):</label>
+    <input type="text" class="edit-input" id="localizacaoEdit"
+      value="Latitude: ${latitude}, Longitude: ${longitude}" disabled>
+    <button type="button" class="btn-green" style="margin-top:5px;" onclick="detectarLocalizacao()">📍 Detectar Localização</button>
+
+    <input type="hidden" id="latitude" name="latitude" value="${latitude}">
+    <input type="hidden" id="longitude" name="longitude" value="${longitude}">
+
+<!-- Foto do perfil -->
+<label>Foto do Perfil:</label>
+
+<!-- Exibir foto atual (com clique para ampliar) -->
+<div style="margin-bottom:10px; text-align:center;">
+  <img id="previewFotoPerfil"
+       src="{{ usuario.foto_perfil or '/static/img/sem-imagem.png' }}"
+       style="width:120px; height:120px; object-fit:cover; border-radius:10px; border:1px solid #ccc; cursor:pointer;"
+       onclick="abrirFotoAmpliada(this.src)">
+</div>
+
+<!-- Input de arquivo escondido -->
+<input type="file"
+       class="edit-input"
+       id="fotoPerfilEdit"
+       name="foto_perfil"
+       accept="image/*"
+       style="display:none;"
+       <input type="file" id="inputFotoPerfil">
+
+
+<button type="button" class="btn-green" onclick="escolherFonteFoto()">📷 Escolher Foto</button>
+
+
+
+    <!-- Botões -->
+    <div class="edit-buttons">
+      <button type="button" class="btn-save" onclick="salvarPerfil()">Salvar</button>
+      <button type="button" class="btn-cancel" onclick="cancelarEdicao()">Cancelar</button>
+    </div>
+
+  </form>
+  `;
+
+  document.getElementById('btnEditarPerfil').style.display = 'none';
+ }
+
+
+
+
+  function cancelarEdicao() { location.reload(); }
+
+  function detectarLocalizacao() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          document.getElementById('latitude').value = lat;
+          document.getElementById('longitude').value = lon;
+          document.getElementById('localizacaoEdit').value = `Latitude: ${lat.toFixed(6)}, Longitude: ${lon.toFixed(6)}`;
+          showToast("Localização detectada com sucesso!", "success");
+        },
+        function (error) { showToast("Não foi possível detectar a localização.", "error"); },
+        { enableHighAccuracy: true }
+      );
+    } else { showToast("Seu navegador não suporta geolocalização.", "error"); }
+  }
+
+  function escolherFonteFoto() {
+    const escolha = confirm("Deseja tirar uma foto com a câmera?\nClique em 'Cancelar' para escolher da galeria.");
+    const input = document.getElementById('fotoPerfilEdit');
+
+    if (escolha) {
+      // Forçar câmera
+      input.setAttribute('capture', 'environment'); // traseira
+    } else {
+      // Abrir galeria
+      input.removeAttribute('capture');
+    }
+
+    input.click();
+  }
+
+  function previewFotoPerfil(input) {
+    const file = input.files[0];
+    if (file) {
+      // Atualiza a imagem do perfil em tempo real (opcional)
+      const img = document.getElementById('fotoPerfil');
+      const reader = new FileReader();
+      reader.onload = function (e) { img.src = e.target.result; }
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function abrirTutorial() {
+    document.getElementById("modalTutorial").style.display = "block";
+  }
+
+  function fecharTutorial() {
+    document.getElementById("modalTutorial").style.display = "none";
+  }
+
+  window.onclick = function (event) {
+    const modal = document.getElementById("modalTutorial");
+    if (event.target === modal) {
+      fecharTutorial();
+    }
+  }
+
+
+  function salvarPerfil() {
+    const form = document.getElementById('formEditarPerfil');
+    const formData = new FormData(form);
+
+    if (!formData.get('latitude')) formData.set('latitude', '');
+    if (!formData.get('longitude')) formData.set('longitude', '');
+
+    fetch('/comerciante/editar', { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        if (data.sucesso) {
+          showToast("Perfil atualizado com sucesso!", "success");
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          console.error(data.erro);
+          showToast("Erro ao atualizar perfil: " + data.erro, "error");
+        }
+      })
+      .catch(err => {
+        console.error("Erro no fetch:", err);
+        showToast("Erro na conexão com o servidor.", "error");
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const camposObrigatorios = {
+      nome: "{{ usuario.nome or '' }}",
+      cidade: "{{ usuario.cidade or '' }}",
+      estado: "{{ usuario.estado or '' }}",
+      whatsapp: "{{ usuario.whatsapp or '' }}",
+      descricao: "{{ usuario.descricao or '' }}",
+      site: "{{ usuario.redes_sociais.site if usuario.redes_sociais else '' }}",
+      instagram: "{{ usuario.redes_sociais.instagram if usuario.redes_sociais else '' }}",
+      facebook: "{{ usuario.redes_sociais.facebook if usuario.redes_sociais else '' }}",
+      whatsapp_business: "{{ usuario.redes_sociais.whatsapp if usuario.redes_sociais else '' }}",
+      endereco_logradouro: "{{ usuario.endereco_logradouro or '' }}",
+      endereco_numero: "{{ usuario.endereco_numero or '' }}",
+      endereco_complemento: "{{ usuario.endereco_complemento or '' }}",
+      latitude: "{{ usuario.latitude or '' }}",
+      longitude: "{{ usuario.longitude or '' }}",
+      horario_funcionamento: "{{ usuario.horario_funcionamento or '' }}",
+    };
+
+    const alerta = document.getElementById("alertaPerfil");
+
+    const incompleto = Object.values(camposObrigatorios).some(v => !v || v.trim() === "");
+
+    if (incompleto) {
+      alerta.style.display = "block";
+
+      const btnCompletar = document.getElementById("btnCompletarPerfil");
+      btnCompletar.addEventListener("click", () => {
+        editarPerfil(); // abre o formulário de edição
+        alerta.style.display = "none"; // fecha o alerta
+      });
+
+      const btnOk = alerta.querySelector('button[onclick="fecharAlerta()"]');
+
+      if (btnCompletar) btnCompletar.addEventListener('click', editarPerfil);
+      if (btnOk) btnOk.addEventListener('click', () => {
+        alerta.style.display = "none"; // só fecha temporariamente
+      });
+    }
+  });
+
+  function fecharAlerta() {
+    document.getElementById("alertaPerfil").style.display = "none";
+    localStorage.setItem("alertaOculto", "true");
+  }
+
+  // 🧹 Limpar horário
+  function limparHorario(btn) {
+    const row = btn.closest('.horario-row');
+    const inputs = row.querySelectorAll('input[type="time"]');
+    inputs.forEach(input => input.value = '');
+  }
+
+  // ➕ Adicionar novo dia especial
+  function adicionarDiaEspecial() {
+    const container = document.getElementById('horariosContainer');
+    const novaLinha = document.createElement('div');
+    novaLinha.classList.add('horario-row');
+    novaLinha.style.display = 'flex';
+    novaLinha.style.gap = '10px';
+    novaLinha.style.alignItems = 'center';
+    novaLinha.innerHTML = `
+    <input type="text" class="edit-input dia-nome" name="dia_nome[]" placeholder="Ex: Natal, Páscoa, Feriado" style="flex:1;">
+    <input type="time" class="edit-input" name="horario_inicio[]" style="flex:1;">
+    <span style="flex:0.2; text-align:center;">às</span>
+    <input type="time" class="edit-input" name="horario_fim[]" style="flex:1;">
+    <button type="button" class="btn btn-sm btn-outline-danger" onclick="limparHorario(this)">🧹</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="removerDiaEspecial(this)">❌</button>
+  `;
+    container.appendChild(novaLinha);
+  }
+
+  // ❌ Remover dia especial
+  function removerDiaEspecial(btn) {
+    const row = btn.closest('.horario-row');
+    row.remove();
+  }
+  function abrirTutorial() {
+    const modal = document.getElementById("modalTutorial");
+    modal.style.display = "block";
+  }
+
+  function fecharTutorial() {
+    const modal = document.getElementById("modalTutorial");
+    modal.style.display = "none";
+  }
+
+  // Fechar clicando fora do conteúdo
+  window.onclick = function (event) {
+    const modal = document.getElementById("modalTutorial");
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+
+    function previewFotoPerfil(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById('previewFotoPerfil').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function escolherFonteFoto() {
+      document.getElementById('fotoPerfilEdit').click();
+    }
+
+    function previewFotoPerfil(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = document.getElementById('previewFotoPerfil');
+          img.src = e.target.result;
+
+          // Atualiza o modal também
+          document.getElementById('fotoAmpliada').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function escolherFonteFoto() {
+      document.getElementById('fotoPerfilEdit').click();
+    }
+
+    function abrirFotoAmpliada(src) {
+      document.getElementById('fotoAmpliada').src = src;
+      document.getElementById('modalFoto').style.display = 'flex';
+    }
+
+    // Fechar clicando fora
+    function fecharFotoAmpliada() {
+      document.getElementById('modalFoto').style.display = 'none';
+    }
+
+    // Fechar no ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') fecharFotoAmpliada();
+    });
+
+    // Quando clicar na foto do perfil → abrir modal
+    const fotoPerfil = document.getElementById("fotoPerfil");
+    const modalFoto = document.getElementById("modalFoto");
+    const fotoAmpliada = document.getElementById("fotoAmpliada");
+
+    if (fotoPerfil) {
+      fotoPerfil.style.cursor = "zoom-in";
+      fotoPerfil.addEventListener("click", function () {
+        fotoAmpliada.src = this.src;
+        modalFoto.style.display = "flex";
+      });
+    }
+
+    modalFoto?.addEventListener("click", () => {
+      modalFoto.style.display = "none";
+    });
+
+    // Fechar ao clicar no fundo escuro
+    function fecharFotoAmpliada() {
+      modalFoto.style.display = "none";
+    }
+    document.getElementById("inputFotoPerfil")?.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        const img = document.getElementById("fotoPerfil");
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  };
+
+</script>
+
+</html>
