@@ -7,4 +7,6 @@ python-dotenv
 werkzeug
 itsdangerous
 Flask-Mail
-Flask-Limiter
+Flask-Limiter[redis]
+supabase==2.4.3
+httpx
