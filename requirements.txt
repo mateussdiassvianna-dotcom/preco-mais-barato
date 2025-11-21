@@ -10,3 +10,4 @@ Flask-Mail
 Flask-Limiter[redis]
 supabase==2.4.3
 httpx
+requests
