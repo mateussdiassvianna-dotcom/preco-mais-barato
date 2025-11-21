@@ -1,0 +1,32 @@
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
+
+# Pastas do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ambiente virtual
+venv/
+env/
+ENV/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Logs e temporários
+*.log
+*.tmp
+*.swp
+
+# Arquivos do PyCharm/VSCode
+.idea/
+.vscode/
+
+# Banco de dados local
+db/
+*.sqlite

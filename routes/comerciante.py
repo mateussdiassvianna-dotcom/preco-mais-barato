@@ -9,6 +9,7 @@ from datetime import datetime
 from functools import wraps
 from decimal import Decimal, InvalidOperation
 import requests
+from dotenv import load_dotenv
 
 # === Bibliotecas externas ===
 import pandas as pd
@@ -17,8 +18,15 @@ from supabase import create_client, Client
 from passlib.hash import pbkdf2_sha256
 from werkzeug.utils import secure_filename
 from flask import (
-    Blueprint, render_template, request, redirect, url_for,
-    flash, session, jsonify, current_app
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    session,
+    jsonify,
+    current_app,
 )
 from flask_login import login_required
 from PIL import Image
@@ -43,9 +51,14 @@ UPLOAD_FOLDER = "static/uploads/comerciantes"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
+
 def allowed_file(filename):
     """Verifica se a extensão da imagem é permitida"""
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+    return (
+        "." in filename
+        and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+    )
+
 
 def save_image(file, comerciante_id):
     """Salva imagem simples sem otimização"""
@@ -58,6 +71,7 @@ def save_image(file, comerciante_id):
         return filepath.replace("\\", "/")
     return None
 
+
 def upload_foto_comerciante(arquivo):
     if not arquivo or arquivo.filename == "":
         return None
@@ -66,7 +80,7 @@ def upload_foto_comerciante(arquivo):
     resp = requests.post(
         url_for("comerciante.upload_imagem_comerciante", _external=True),
         files={"file": arquivo},
-        data={"imagem": ""}
+        data={"imagem": ""},
     ).json()
 
     if resp.get("sucesso"):
@@ -79,7 +93,7 @@ def limpar_preco(valor):
     """
     Converte qualquer tipo de preço mal formatado para float.
     Retorna None se o valor não for um número válido.
-    
+
     Compatível com:
     - preços brasileiros (1.234,56)
     - preços internacionais (1,234.56)
@@ -126,6 +140,7 @@ def limpar_preco(valor):
         # Não é número
         return None
 
+
 def salvar_imagem_otimizada(arquivo, comerciante_id, largura_max=800, qualidade=70):
     if not arquivo or not allowed_file(arquivo.filename):
         return "/static/img/sem-imagem.png"  # fallback automático
@@ -146,18 +161,26 @@ def salvar_imagem_otimizada(arquivo, comerciante_id, largura_max=800, qualidade=
 
     return f"/static/uploads/comerciantes/{comerciante_id}/{filename}"
 
+
 def allowed_import_file(filename):
     """Verifica se o arquivo tem extensão permitida para importação"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['csv', 'txt', 'xlsx', 'xls']
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in [
+        "csv",
+        "txt",
+        "xlsx",
+        "xls",
+    ]
+
 
 def normalizar_coluna(nome):
     """
     Normaliza o nome da coluna: minúsculo, sem acentos e substitui espaços por underscores
     """
     nome = str(nome).strip().lower()
-    nome = unicodedata.normalize('NFKD', nome).encode('ASCII', 'ignore').decode('utf-8')
-    nome = re.sub(r'\s+', '_', nome)
+    nome = unicodedata.normalize("NFKD", nome).encode("ASCII", "ignore").decode("utf-8")
+    nome = re.sub(r"\s+", "_", nome)
     return nome
+
 
 def to_float_safe(value):
     if value in (None, "", "null"):
@@ -168,11 +191,11 @@ def to_float_safe(value):
         return None
 
 
-# -----------------------------
-# Conexão Supabase
-# -----------------------------
-SUPABASE_URL = "https://fzlxteusmakgjmurtrur.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bHh0ZXVzbWFrZ2ptdXJ0cnVyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODYxMzQzNCwiZXhwIjoyMDc0MTg5NDM0fQ.u8ZzwEFYywapgFWWurYXOb30C87cKLCL_TJ8q1aFjTs"
+# Carrega variáveis do .env
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
@@ -186,7 +209,9 @@ def login_required(f):
             flash("Faça login para acessar essa página.", "erro")
             return redirect(url_for("comerciante.comerciante_login"))
         return f(*args, **kwargs)
+
     return decorated
+
 
 # -----------------------------
 # Rotas Comerciante
@@ -202,6 +227,7 @@ from urllib.parse import quote
 from flask import render_template, request, redirect, url_for, flash, current_app
 from passlib.hash import pbkdf2_sha256
 from datetime import datetime
+
 
 @comerciante_bp.route("/cadastro", methods=["GET", "POST"])
 def comerciante_cadastro():
@@ -238,7 +264,12 @@ def comerciante_cadastro():
         # Verifica duplicado
         print("\n→ Verificando e-mail duplicado...")
         try:
-            existing = supabase.table("comerciantes_pendentes").select("id").eq("email", email).execute()
+            existing = (
+                supabase.table("comerciantes_pendentes")
+                .select("id")
+                .eq("email", email)
+                .execute()
+            )
             print("Resultado duplicado:", existing.data)
         except Exception as e:
             print("❌ ERRO AO VERIFICAR DUPLICADO:", e)
@@ -283,7 +314,7 @@ def comerciante_cadastro():
             "latitude": latitude,
             "longitude": longitude,
             "status": "pendente",
-            "data_cadastro": datetime.utcnow().isoformat()
+            "data_cadastro": datetime.utcnow().isoformat(),
         }
 
         print("\n→ Enviando INSERT para comerciantes_pendentes...")
@@ -331,9 +362,11 @@ def aprovacao():
     nome_comercio = request.args.get("nome_do_comercio", "Comércio")
     return render_template("aprovacao.html", nome_comercio=nome_comercio)
 
+
 from flask import Blueprint, request, session, jsonify, current_app
 import os
 from werkzeug.utils import secure_filename
+
 
 @comerciante_bp.route("/login", methods=["GET", "POST"])
 def comerciante_login():
@@ -348,37 +381,65 @@ def comerciante_login():
 
         try:
             # 1️⃣ Login no Supabase Auth
-            res = supabase.auth.sign_in_with_password({"email": email, "password": senha})
-            user = getattr(res, "user", None) or getattr(getattr(res, "session", None), "user", None)
+            res = supabase.auth.sign_in_with_password(
+                {"email": email, "password": senha}
+            )
+            user = getattr(res, "user", None) or getattr(
+                getattr(res, "session", None), "user", None
+            )
 
             if not user or not getattr(user, "id", None):
-                flash("E-mail ou senha incorretos. Verifique e tente novamente.", "erro")
+                flash(
+                    "E-mail ou senha incorretos. Verifique e tente novamente.", "erro"
+                )
                 return render_template("comerciante_login.html")
 
             auth_user_id = str(user.id)
 
             # 2️⃣ Verifica se e-mail foi confirmado
             if not user.email_confirmed_at:
-                flash("Você ainda não confirmou seu e-mail. Verifique sua caixa de entrada e clique no link enviado.", "erro")
+                flash(
+                    "Você ainda não confirmou seu e-mail. Verifique sua caixa de entrada e clique no link enviado.",
+                    "erro",
+                )
                 return render_template("comerciante_login.html")
 
             # 3️⃣ Busca comerciante aprovado usando auth_user_id
-            resp = supabase.table("comerciantes").select("*").eq("auth_user_id", auth_user_id).execute()
+            resp = (
+                supabase.table("comerciantes")
+                .select("*")
+                .eq("auth_user_id", auth_user_id)
+                .execute()
+            )
             dados_usuario = resp.data[0] if resp.data else None
 
             if not dados_usuario:
                 # Verifica se está pendente
-                pendente = supabase.table("comerciantes_pendentes").select("id").eq("auth_user_id", auth_user_id).execute()
+                pendente = (
+                    supabase.table("comerciantes_pendentes")
+                    .select("id")
+                    .eq("auth_user_id", auth_user_id)
+                    .execute()
+                )
                 if pendente.data:
-                    flash("Sua conta ainda está pendente de aprovação pelo administrador. Aguarde a liberação.", "erro")
+                    flash(
+                        "Sua conta ainda está pendente de aprovação pelo administrador. Aguarde a liberação.",
+                        "erro",
+                    )
                 else:
-                    flash("Usuário não encontrado. Verifique se você se cadastrou corretamente.", "erro")
+                    flash(
+                        "Usuário não encontrado. Verifique se você se cadastrou corretamente.",
+                        "erro",
+                    )
                 return render_template("comerciante_login.html")
 
             # 4️⃣ Login bem-sucedido
             session["user_id"] = auth_user_id
             session["comerciante_id"] = dados_usuario.get("id")
-            flash(f"Olá {dados_usuario.get('nome')}, login realizado com sucesso!", "sucesso")
+            flash(
+                f"Olá {dados_usuario.get('nome')}, login realizado com sucesso!",
+                "sucesso",
+            )
             return redirect(url_for("comerciante.dashboard_comerciante"))
 
         except Exception as e:
@@ -391,6 +452,7 @@ def comerciante_login():
 from flask import Blueprint, request, jsonify, session, current_app
 from werkzeug.utils import secure_filename
 import os
+
 
 @comerciante_bp.route("/editar", methods=["POST"])
 def editar_comerciante():
@@ -453,7 +515,7 @@ def editar_comerciante():
         horario_funcionamento[dia] = {
             "inicio": inicio or "",
             "fim": fim or "",
-            "fechado": fechado
+            "fechado": fechado,
         }
 
     # ------------------------------
@@ -522,13 +584,13 @@ def editar_comerciante():
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
-
 @comerciante_bp.route("/logout")
 @login_required
 def comerciante_logout():
     session.clear()
     flash("Logout realizado com sucesso!", "sucesso")
     return redirect(url_for("comerciante.comerciante_login"))
+
 
 @comerciante_bp.route("/dashboard")
 def dashboard_comerciante():
@@ -541,7 +603,12 @@ def dashboard_comerciante():
 
     try:
         # Busca comerciante aprovado usando auth_user_id
-        resp = supabase.table("comerciantes").select("*").eq("auth_user_id", user_id).execute()
+        resp = (
+            supabase.table("comerciantes")
+            .select("*")
+            .eq("auth_user_id", user_id)
+            .execute()
+        )
         dados_usuario = resp.data[0] if resp.data else None
 
         if not dados_usuario:
@@ -555,12 +622,16 @@ def dashboard_comerciante():
         flash(f"Erro ao carregar o dashboard: {e}", "erro")
         return redirect(url_for("comerciante.comerciante_login"))
 
-
     try:
         user_id = session["user_id"]
 
         # Busca o comerciante aprovado na tabela
-        resp = supabase.table("comerciantes").select("*").eq("user_id", str(user_id)).execute()
+        resp = (
+            supabase.table("comerciantes")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .execute()
+        )
         comerciante = resp.data[0] if resp.data else None
 
         if not comerciante:
@@ -577,15 +648,12 @@ def dashboard_comerciante():
 
         # Aqui está a correção principal:
         return render_template(
-            "dashboard_comerciante.html",
-            usuario=comerciante,
-            auth_user=auth_user
+            "dashboard_comerciante.html", usuario=comerciante, auth_user=auth_user
         )
 
     except Exception as e:
         flash(f"Erro ao carregar o dashboard: {str(e)}", "erro")
         return redirect(url_for("comerciante.comerciante_login"))
-
 
 
 # -----------------------------
@@ -595,9 +663,15 @@ def dashboard_comerciante():
 @login_required
 def meus_produtos():
     comerciante_id = session["comerciante_id"]
-    resp = supabase.table("produtos").select("*").eq("comerciante_id", comerciante_id).execute()
+    resp = (
+        supabase.table("produtos")
+        .select("*")
+        .eq("comerciante_id", comerciante_id)
+        .execute()
+    )
     produtos = resp.data
     return render_template("meus_produtos.html", produtos=produtos)
+
 
 @comerciante_bp.route("/api/produtos", methods=["GET"])
 @login_required
@@ -654,7 +728,9 @@ def api_listar_produtos():
 
             if busca:
                 count_query = count_query.or_(
-                    f"nome.ilike.%{busca}%," f"marca.ilike.%{busca}%," f"categoria.ilike.%{busca}%"
+                    f"nome.ilike.%{busca}%,"
+                    f"marca.ilike.%{busca}%,"
+                    f"categoria.ilike.%{busca}%"
                 )
 
             if aviso_filtro:
@@ -678,7 +754,9 @@ def api_listar_produtos():
 
         if busca:
             query = query.or_(
-                f"nome.ilike.%{busca}%," f"marca.ilike.%{busca}%," f"categoria.ilike.%{busca}%"
+                f"nome.ilike.%{busca}%,"
+                f"marca.ilike.%{busca}%,"
+                f"categoria.ilike.%{busca}%"
             )
 
         if aviso_filtro:
@@ -689,20 +767,32 @@ def api_listar_produtos():
         produtos_res = executar_query(query)
         produtos = produtos_res.data if produtos_res else []
 
-        return jsonify({
-            "sucesso": True,
-            "offset": offset,
-            "limite": limite,
-            "total": total,
-            "qtd_retorno": len(produtos),
-            "produtos": produtos,
-            "ultima_atualizacao": datetime.now(timezone.utc).isoformat()
-        })
+        return jsonify(
+            {
+                "sucesso": True,
+                "offset": offset,
+                "limite": limite,
+                "total": total,
+                "qtd_retorno": len(produtos),
+                "produtos": produtos,
+                "ultima_atualizacao": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
-        return jsonify({"sucesso": False, "erro": "Erro ao acessar o Supabase, tente novamente."}), 500
+        return (
+            jsonify(
+                {
+                    "sucesso": False,
+                    "erro": "Erro ao acessar o Supabase, tente novamente.",
+                }
+            ),
+            500,
+        )
+
 
 @comerciante_bp.route("/api/produtos/metadados", methods=["GET"])
 @login_required
@@ -741,7 +831,7 @@ def api_metadados_produtos():
         lotes = {}
         for i in range(0, len(produtos), limite):
             lote_num = (i // limite) + 1
-            sub = produtos[i:i + limite]
+            sub = produtos[i : i + limite]
 
             datas = [
                 p.get("atualizado_em") or p.get("criado_em")
@@ -753,8 +843,11 @@ def api_metadados_produtos():
 
             try:
                 mais_recente = max(
-                    datetime.fromisoformat(d).astimezone(timezone.utc)
-                    if isinstance(d, str) else d
+                    (
+                        datetime.fromisoformat(d).astimezone(timezone.utc)
+                        if isinstance(d, str)
+                        else d
+                    )
                     for d in datas
                 )
                 lotes[str(lote_num)] = mais_recente.isoformat()
@@ -765,12 +858,9 @@ def api_metadados_produtos():
 
     except Exception as e:
         import traceback
-        traceback.print_exc()
-        return jsonify({
-            "sucesso": False,
-            "erro": str(e)
-        }), 500
 
+        traceback.print_exc()
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
 @comerciante_bp.route("/api/produtos", methods=["POST"])
@@ -782,7 +872,10 @@ def api_criar_produto():
         preco_raw = dados.get("preco")
 
         if not nome or not preco_raw:
-            return jsonify({"sucesso": False, "erro": "Nome e preço são obrigatórios."}), 400
+            return (
+                jsonify({"sucesso": False, "erro": "Nome e preço são obrigatórios."}),
+                400,
+            )
 
         try:
             preco = float(str(preco_raw).replace(",", "."))
@@ -810,7 +903,7 @@ def api_criar_produto():
             "descricao": (dados.get("descricao") or "").strip(),
             "imagem": imagem or (dados.get("imagem") or "").strip(),
             "criado_em": datetime.utcnow().isoformat(),
-            "atualizado_em": datetime.utcnow().isoformat()
+            "atualizado_em": datetime.utcnow().isoformat(),
         }
 
         resp = supabase.table("produtos").insert(produto).execute()
@@ -825,6 +918,7 @@ def api_criar_produto():
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
@@ -839,7 +933,11 @@ def api_editar_produto(id):
 
         for campo in ["nome", "preco", "marca", "categoria", "descricao"]:
             if campo in dados:
-                updates[campo] = dados[campo].strip() if isinstance(dados[campo], str) else dados[campo]
+                updates[campo] = (
+                    dados[campo].strip()
+                    if isinstance(dados[campo], str)
+                    else dados[campo]
+                )
 
         if "preco" in updates:
             try:
@@ -850,7 +948,9 @@ def api_editar_produto(id):
         # Upload da imagem ou fallback
         if "imagem" in request.files and request.files["imagem"].filename:
             arquivo = request.files["imagem"]
-            updates["imagem"] = salvar_imagem_otimizada(arquivo, session["comerciante_id"])
+            updates["imagem"] = salvar_imagem_otimizada(
+                arquivo, session["comerciante_id"]
+            )
         elif "imagem" in dados and dados["imagem"].strip():
             updates["imagem"] = dados["imagem"].strip()
         else:
@@ -858,50 +958,68 @@ def api_editar_produto(id):
 
         updates["atualizado_em"] = datetime.utcnow().isoformat()
 
-        resp = supabase.table("produtos") \
-            .update(updates) \
-            .eq("id", str(id)) \
-            .eq("comerciante_id", session["comerciante_id"]) \
+        resp = (
+            supabase.table("produtos")
+            .update(updates)
+            .eq("id", str(id))
+            .eq("comerciante_id", session["comerciante_id"])
             .execute()
+        )
 
         if not resp.data:
-            return jsonify({"sucesso": False, "erro": "Produto não encontrado ou não pertence ao comerciante."}), 404
+            return (
+                jsonify(
+                    {
+                        "sucesso": False,
+                        "erro": "Produto não encontrado ou não pertence ao comerciante.",
+                    }
+                ),
+                404,
+            )
 
         return jsonify({"sucesso": True, "produto": resp.data[0]}), 200
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-    
+
 @comerciante_bp.route("/api/produtos/<id>", methods=["DELETE"])
 @login_required
 def api_deletar_produto(id):
     # 1️⃣ Busca o produto para pegar o nome da imagem
-    produto = supabase.table("produtos") \
-        .select("id, imagem") \
-        .eq("id", id) \
-        .eq("comerciante_id", session["comerciante_id"]) \
-        .single() \
+    produto = (
+        supabase.table("produtos")
+        .select("id, imagem")
+        .eq("id", id)
+        .eq("comerciante_id", session["comerciante_id"])
+        .single()
         .execute()
+    )
 
     if not produto.data:
         return jsonify({"erro": "Produto não encontrado"}), 404
 
     # 2️⃣ Deleta a imagem do bucket se existir
     if produto.data.get("imagem"):
-        nome_arquivo = produto.data["imagem"].split("/")[-1]  # pega só o nome do arquivo
+        nome_arquivo = produto.data["imagem"].split("/")[
+            -1
+        ]  # pega só o nome do arquivo
         supabase.storage.from_("produtos").remove([nome_arquivo])
 
     # 3️⃣ Deleta o produto do banco
-    resp = supabase.table("produtos") \
-        .delete() \
-        .eq("id", id) \
-        .eq("comerciante_id", session["comerciante_id"]) \
+    resp = (
+        supabase.table("produtos")
+        .delete()
+        .eq("id", id)
+        .eq("comerciante_id", session["comerciante_id"])
         .execute()
+    )
 
     return jsonify({"sucesso": True})
+
 
 # -----------------------------
 # Importação de planilha
@@ -928,7 +1046,10 @@ def importar_produtos():
 
         arquivo = request.files["arquivo"]
         if arquivo.filename == "":
-            return jsonify({"sucesso": False, "erro": "Nenhum arquivo selecionado."}), 400
+            return (
+                jsonify({"sucesso": False, "erro": "Nenhum arquivo selecionado."}),
+                400,
+            )
 
         filename = secure_filename(arquivo.filename)
         extensao = filename.lower().split(".")[-1]
@@ -954,10 +1075,15 @@ def importar_produtos():
                     caminho_temp = caminho_convertido
                     extensao = "xlsx"
                 except Exception as e:
-                    return jsonify({
-                        "sucesso": False,
-                        "erro": f"Falha ao ler arquivo .xls. Converta para .xlsx. Detalhes: {str(e)}"
-                    }), 400
+                    return (
+                        jsonify(
+                            {
+                                "sucesso": False,
+                                "erro": f"Falha ao ler arquivo .xls. Converta para .xlsx. Detalhes: {str(e)}",
+                            }
+                        ),
+                        400,
+                    )
 
             # --- Agora lê normalmente como XLSX ---
             wb_raw = load_workbook(caminho_temp, read_only=True, data_only=True)
@@ -977,7 +1103,9 @@ def importar_produtos():
                         if isinstance(val, int):
                             r[col_name.strip().lower()] = str(val)
                         elif isinstance(val, float):
-                            r[col_name.strip().lower()] = str(int(val)) if val.is_integer() else str(val)
+                            r[col_name.strip().lower()] = (
+                                str(int(val)) if val.is_integer() else str(val)
+                            )
                         else:
                             r[col_name.strip().lower()] = str(val)
                 rows_raw.append(r)
@@ -1001,7 +1129,9 @@ def importar_produtos():
             tentativas = [";", ",", "\t", "|"]
             for sep in tentativas:
                 try:
-                    df = pd.read_csv(caminho_temp, encoding=encoding, sep=sep, dtype=str)
+                    df = pd.read_csv(
+                        caminho_temp, encoding=encoding, sep=sep, dtype=str
+                    )
                     if len(df.columns) > 0:
                         break
                 except Exception:
@@ -1009,7 +1139,12 @@ def importar_produtos():
                     continue
 
             if df is None:
-                return jsonify({"sucesso": False, "erro": "Não foi possível parsear o CSV."}), 400
+                return (
+                    jsonify(
+                        {"sucesso": False, "erro": "Não foi possível parsear o CSV."}
+                    ),
+                    400,
+                )
 
             df = df.fillna("")
             rows_raw = df.astype(str).to_dict(orient="records")
@@ -1049,7 +1184,9 @@ def importar_produtos():
                 parsed = False
                 for sep in tentativas:
                     try:
-                        df = pd.read_csv(caminho_temp, encoding=encoding, sep=sep, dtype=str)
+                        df = pd.read_csv(
+                            caminho_temp, encoding=encoding, sep=sep, dtype=str
+                        )
                         if len(df.columns) > 0:
                             parsed = True
                             break
@@ -1057,7 +1194,13 @@ def importar_produtos():
                         continue
 
                 if not parsed:
-                    linhas = [l.strip() for l in open(caminho_temp, encoding=encoding, errors="ignore").readlines() if l.strip()]
+                    linhas = [
+                        l.strip()
+                        for l in open(
+                            caminho_temp, encoding=encoding, errors="ignore"
+                        ).readlines()
+                        if l.strip()
+                    ]
                     rows_raw = [{"linha": l} for l in linhas]
                     df = pd.DataFrame(rows_raw)
                 else:
@@ -1065,7 +1208,13 @@ def importar_produtos():
                     rows_raw = df.astype(str).to_dict(orient="records")
 
             else:
-                linhas = [l.strip() for l in open(caminho_temp, encoding=encoding, errors="ignore").readlines() if l.strip()]
+                linhas = [
+                    l.strip()
+                    for l in open(
+                        caminho_temp, encoding=encoding, errors="ignore"
+                    ).readlines()
+                    if l.strip()
+                ]
                 rows_raw = [{"linha": l} for l in linhas]
                 df = pd.DataFrame(rows_raw)
 
@@ -1077,25 +1226,45 @@ def importar_produtos():
             rows_raw = df.astype(str).to_dict(orient="records")
 
         else:
-            return jsonify({"sucesso": False, "erro": f"Formato de arquivo não suportado: .{extensao}"}), 400
+            return (
+                jsonify(
+                    {
+                        "sucesso": False,
+                        "erro": f"Formato de arquivo não suportado: .{extensao}",
+                    }
+                ),
+                400,
+            )
 
         # -----------------------------------------------------------------
         # ===================== Arquivo vazio ===============================
         # -----------------------------------------------------------------
         if df is None or df.empty:
-            return jsonify({"sucesso": False, "erro": "Arquivo vazio ou não foi possível ler."}),
+            return (
+                jsonify(
+                    {"sucesso": False, "erro": "Arquivo vazio ou não foi possível ler."}
+                ),
+            )
 
         # ===================== Normalização =====================
         def normalizar_coluna(c):
             c = str(c).strip().lower()
-            c = unicodedata.normalize("NFKD", c).encode("ASCII", "ignore").decode("utf-8")
+            c = (
+                unicodedata.normalize("NFKD", c)
+                .encode("ASCII", "ignore")
+                .decode("utf-8")
+            )
             return c
 
         def normalizar_texto(valor):
             if valor is None:
                 return ""
             v = str(valor).strip().lower()
-            v = unicodedata.normalize("NFKD", v).encode("ASCII", "ignore").decode("utf-8")
+            v = (
+                unicodedata.normalize("NFKD", v)
+                .encode("ASCII", "ignore")
+                .decode("utf-8")
+            )
             return v
 
         df.columns = [normalizar_coluna(c) for c in df.columns]
@@ -1115,12 +1284,22 @@ def importar_produtos():
         produtos_importados, erros = [], []
 
         # ===================== Produtos já existentes =====================
-        nomes_existentes_resp = supabase.table("produtos").select("nome").eq("comerciante_id", comerciante_id).execute()
-        nomes_existentes = {p["nome"].strip().lower() for p in (nomes_existentes_resp.data or [])}
+        nomes_existentes_resp = (
+            supabase.table("produtos")
+            .select("nome")
+            .eq("comerciante_id", comerciante_id)
+            .execute()
+        )
+        nomes_existentes = {
+            p["nome"].strip().lower() for p in (nomes_existentes_resp.data or [])
+        }
 
         def traduzir_erro(e: Exception):
             erro_str = str(e)
-            if "could not convert string to float" in erro_str or "invalid literal for float" in erro_str:
+            if (
+                "could not convert string to float" in erro_str
+                or "invalid literal for float" in erro_str
+            ):
                 return "O campo de preço contém texto ou está vazio. Verifique a coluna Preço."
             elif "NoneType" in erro_str:
                 return "Um dos campos obrigatórios (como nome ou preço) está vazio."
@@ -1167,7 +1346,7 @@ def importar_produtos():
                 preco_num = None
                 try:
                     tmp = preco_texto.replace("R$", "").replace("r$", "").strip()
-                    tmp = tmp.replace("\u00A0", "").replace(" ", "")
+                    tmp = tmp.replace("\u00a0", "").replace(" ", "")
                     if tmp == "" or tmp.lower() in ["nan", "none"]:
                         preco_num = None
                     else:
@@ -1180,7 +1359,13 @@ def importar_produtos():
                     preco_num = None
 
                 if not nome:
-                    erros.append({"linha": linha, "erro": "Nome ausente. Produto sem nome.", "tipo": "erro"})
+                    erros.append(
+                        {
+                            "linha": linha,
+                            "erro": "Nome ausente. Produto sem nome.",
+                            "tipo": "erro",
+                        }
+                    )
                     continue
 
                 nome_norm = normalizar_texto(nome)
@@ -1194,17 +1379,21 @@ def importar_produtos():
 
                 if chave in vistos_no_arquivo:
                     primeira_linha = vistos_no_arquivo[chave]
-                    erros.append({
-                        "linha": linha,
-                        "erro": f"Produto duplicado na própria planilha. Primeira ocorrência na linha {primeira_linha}.",
-                        "tipo": "erro"
-                    })
-                    duplicados_internos.append({
-                        "linha_duplicada": linha,
-                        "nome": nome,
-                        "marca": marca or "(vazio)",
-                        "primeira_ocorrencia": primeira_linha
-                    })
+                    erros.append(
+                        {
+                            "linha": linha,
+                            "erro": f"Produto duplicado na própria planilha. Primeira ocorrência na linha {primeira_linha}.",
+                            "tipo": "erro",
+                        }
+                    )
+                    duplicados_internos.append(
+                        {
+                            "linha_duplicada": linha,
+                            "nome": nome,
+                            "marca": marca or "(vazio)",
+                            "primeira_ocorrencia": primeira_linha,
+                        }
+                    )
                     continue
                 else:
                     vistos_no_arquivo[chave] = linha
@@ -1215,24 +1404,34 @@ def importar_produtos():
                         "categoria": categoria or "",
                         "preco_texto": preco_texto,
                         "preco": preco_num if preco_num is not None else "",
-                        "descricao": descricao or ""
+                        "descricao": descricao or "",
                     }
 
-                if (preco_texto == "" or preco_texto.lower() in ["nan", "none"]) and preco_num is None:
-                    erros.append({"linha": linha, "erro": "Preço ausente ou inválido.", "tipo": "erro"})
+                if (
+                    preco_texto == "" or preco_texto.lower() in ["nan", "none"]
+                ) and preco_num is None:
+                    erros.append(
+                        {
+                            "linha": linha,
+                            "erro": "Preço ausente ou inválido.",
+                            "tipo": "erro",
+                        }
+                    )
                     continue
 
-                produtos_importados.append({
-                    "comerciante_id": comerciante_id,
-                    "nome": nome,
-                    "preco": preco_num if preco_num is not None else None,
-                    "marca": marca,
-                    "categoria": categoria,
-                    "descricao": descricao,
-                    "imagem": processar_imagem(row.get("imagem")),
-                    "criado_em": datetime.utcnow().isoformat(),
-                    "atualizado_em": datetime.utcnow().isoformat(),
-                })
+                produtos_importados.append(
+                    {
+                        "comerciante_id": comerciante_id,
+                        "nome": nome,
+                        "preco": preco_num if preco_num is not None else None,
+                        "marca": marca,
+                        "categoria": categoria,
+                        "descricao": descricao,
+                        "imagem": processar_imagem(row.get("imagem")),
+                        "criado_em": datetime.utcnow().isoformat(),
+                        "atualizado_em": datetime.utcnow().isoformat(),
+                    }
+                )
                 nomes_existentes.add(nome.lower())
 
             except Exception as e:
@@ -1251,19 +1450,31 @@ def importar_produtos():
                 if marcas_vazias:
                     linhas_sem_marca = nome_sem_marca_linhas.get(nome_norm, [])
                     for linha_sem_marca in linhas_sem_marca:
-                        ja_tem = any(e.get("linha") == linha_sem_marca and "marca" in e.get("erro", "").lower() for e in erros)
+                        ja_tem = any(
+                            e.get("linha") == linha_sem_marca
+                            and "marca" in e.get("erro", "").lower()
+                            for e in erros
+                        )
                         if not ja_tem:
-                            erros.append({
-                                "linha": linha_sem_marca,
-                                "erro": "Nome presente em outras linhas, mas MARCA ausente aqui — impossível decidir se é o mesmo produto.",
-                                "tipo": "erro"
-                            })
-                            duplicados_internos.append({
-                                "linha_duplicada": linha_sem_marca,
-                                "nome": primeira_ocorrencia_info.get((nome_norm, ""), {}).get("nome", ""),
-                                "marca": "(vazio)",
-                                "primeira_ocorrencia": primeira_ocorrencia_info.get((nome_norm, lista_chaves[0][0]), {}).get("linha", "")
-                            })
+                            erros.append(
+                                {
+                                    "linha": linha_sem_marca,
+                                    "erro": "Nome presente em outras linhas, mas MARCA ausente aqui — impossível decidir se é o mesmo produto.",
+                                    "tipo": "erro",
+                                }
+                            )
+                            duplicados_internos.append(
+                                {
+                                    "linha_duplicada": linha_sem_marca,
+                                    "nome": primeira_ocorrencia_info.get(
+                                        (nome_norm, ""), {}
+                                    ).get("nome", ""),
+                                    "marca": "(vazio)",
+                                    "primeira_ocorrencia": primeira_ocorrencia_info.get(
+                                        (nome_norm, lista_chaves[0][0]), {}
+                                    ).get("linha", ""),
+                                }
+                            )
 
         # ===================== Inserção no banco =====================
         if produtos_importados:
@@ -1293,16 +1504,20 @@ def importar_produtos():
             left=Side(style="thin", color="999999"),
             right=Side(style="thin", color="999999"),
             top=Side(style="thin", color="999999"),
-            bottom=Side(style="thin", color="999999")
+            bottom=Side(style="thin", color="999999"),
         )
 
         # limpa sheet
         ws.delete_rows(1, ws.max_row)
         ws.merge_cells("A1:G1")
-        ws["A1"].value = "Relatório Analítico de Validação de Produtos - 🔁 Preço Mais Barato"
+        ws["A1"].value = (
+            "Relatório Analítico de Validação de Produtos - 🔁 Preço Mais Barato"
+        )
         ws["A1"].font = fonte_titulo
         ws["A1"].alignment = alin_centro
-        ws["A1"].fill = PatternFill(start_color=cor_titulo, end_color=cor_titulo, fill_type="solid")
+        ws["A1"].fill = PatternFill(
+            start_color=cor_titulo, end_color=cor_titulo, fill_type="solid"
+        )
         ws.row_dimensions[1].height = 26
 
         # === CABEÇALHO VERTICAL ===
@@ -1311,7 +1526,7 @@ def importar_produtos():
             "Tipo de operação": "IMPORTAÇÃO DE PRODUTOS",
             "Sistema": "Preço Mais Barato - Núcleo de Inteligência",
             "Versão do motor": "2.3.1",
-            "Relatório": "Relatório Analítico de Validação de Produtos"
+            "Relatório": "Relatório Analítico de Validação de Produtos",
         }
         for k, v in cab.items():
             ws.append([k, v])
@@ -1323,7 +1538,9 @@ def importar_produtos():
         # ===== Resumo =====
         ws.append(["Resumo da Importação"])
         ws["A" + str(ws.max_row)].font = fonte_secao
-        ws["A" + str(ws.max_row)].fill = PatternFill(start_color=cor_secao, end_color=cor_secao, fill_type="solid")
+        ws["A" + str(ws.max_row)].fill = PatternFill(
+            start_color=cor_secao, end_color=cor_secao, fill_type="solid"
+        )
 
         ws.append(["Total de linhas", "Importados", "Com Erro", "Com Aviso"])
         for c in ws[ws.max_row]:
@@ -1331,12 +1548,14 @@ def importar_produtos():
             c.alignment = alin_centro
             c.border = borda
 
-        ws.append([
-            len(df),
-            len(produtos_importados),
-            len([e for e in erros if e.get("tipo") == "erro"]),
-            len([e for e in erros if e.get("tipo") == "aviso"])
-        ])
+        ws.append(
+            [
+                len(df),
+                len(produtos_importados),
+                len([e for e in erros if e.get("tipo") == "erro"]),
+                len([e for e in erros if e.get("tipo") == "aviso"]),
+            ]
+        )
         for c in ws[ws.max_row]:
             c.alignment = alin_centro
             c.border = borda
@@ -1346,14 +1565,27 @@ def importar_produtos():
         # ===== Produtos com Erro / Avisos =====
         ws.append(["⚠️ Produtos com Erro / Avisos (Simples ➜ Solução)"])
         ws["A" + str(ws.max_row)].font = fonte_secao
-        ws["A" + str(ws.max_row)].fill = PatternFill(start_color=cor_secao, end_color=cor_secao, fill_type="solid")
+        ws["A" + str(ws.max_row)].fill = PatternFill(
+            start_color=cor_secao, end_color=cor_secao, fill_type="solid"
+        )
 
         if erros:
-            ws.append(["Linha", "O que aconteceu (simples)", "O que fazer (simples)", "Análise técnica (código)"])
+            ws.append(
+                [
+                    "Linha",
+                    "O que aconteceu (simples)",
+                    "O que fazer (simples)",
+                    "Análise técnica (código)",
+                ]
+            )
             for cell in ws[ws.max_row]:
                 cell.font = Font(bold=True, color="FFFFFF")
                 cell.alignment = alin_centro
-                cell.fill = PatternFill(start_color=cor_erro_header, end_color=cor_erro_header, fill_type="solid")
+                cell.fill = PatternFill(
+                    start_color=cor_erro_header,
+                    end_color=cor_erro_header,
+                    fill_type="solid",
+                )
                 cell.border = borda
 
             # agrupar erros por linha
@@ -1377,25 +1609,43 @@ def importar_produtos():
 
                 if "preço ausente" in lower_msg or "preço inválido" in lower_msg:
                     instrucoes.append("Preencha o PREÇO (ex.: 2,99 ou 299).")
-                    instr_tecnica.append(("E-03", "Preço ausente/inválido: impede cadastro."))
+                    instr_tecnica.append(
+                        ("E-03", "Preço ausente/inválido: impede cadastro.")
+                    )
 
                 if "duplicado na própria planilha" in lower_msg:
-                    instrucoes.append("Remova duplicatas ou mantenha apenas a primeira ocorrência.")
+                    instrucoes.append(
+                        "Remova duplicatas ou mantenha apenas a primeira ocorrência."
+                    )
                     instr_tecnica.append(("E-04", "Duplicata exata (nome+marca)."))
 
                 if "já existe" in lower_msg:
-                    instrucoes.append("Produto já cadastrado. Use 'Atualizar Produtos' para alterar.")
-                    instr_tecnica.append(("E-05", "Conflito com base: nome já presente."))
+                    instrucoes.append(
+                        "Produto já cadastrado. Use 'Atualizar Produtos' para alterar."
+                    )
+                    instr_tecnica.append(
+                        ("E-05", "Conflito com base: nome já presente.")
+                    )
 
                 if "marca ausente" in lower_msg:
-                    instrucoes.append("Preencha MARCA; se não souber escreva 'SEM MARCA'.")
-                    instr_tecnica.append(("E-06", "Marca ausente: dificulta distinção."))
+                    instrucoes.append(
+                        "Preencha MARCA; se não souber escreva 'SEM MARCA'."
+                    )
+                    instr_tecnica.append(
+                        ("E-06", "Marca ausente: dificulta distinção.")
+                    )
 
                 if not instrucoes:
-                    instrucoes.append("Corrija os campos indicados e importe novamente.")
-                    instr_tecnica.append(("E-00", "Erro genérico: verificar manualmente."))
+                    instrucoes.append(
+                        "Corrija os campos indicados e importe novamente."
+                    )
+                    instr_tecnica.append(
+                        ("E-00", "Erro genérico: verificar manualmente.")
+                    )
 
-                return " ".join(instrucoes), " | ".join([f"{c}: {d}" for c, d in instr_tecnica])
+                return " ".join(instrucoes), " | ".join(
+                    [f"{c}: {d}" for c, d in instr_tecnica]
+                )
 
             for linha_idx in sorted(erros_por_linha.keys()):
                 mensagens = erros_por_linha[linha_idx]
@@ -1405,9 +1655,13 @@ def importar_produtos():
                 ws.append([linha_idx, joined_msg, instr_simples, instr_tecnica])
                 last_row = ws.max_row
 
-                fill = PatternFill(start_color=cor_erro, end_color=cor_erro, fill_type="solid")
+                fill = PatternFill(
+                    start_color=cor_erro, end_color=cor_erro, fill_type="solid"
+                )
                 if "marca ausente" in joined_msg.lower():
-                    fill = PatternFill(start_color=cor_aviso, end_color=cor_aviso, fill_type="solid")
+                    fill = PatternFill(
+                        start_color=cor_aviso, end_color=cor_aviso, fill_type="solid"
+                    )
 
                 for cell in ws[last_row]:
                     cell.alignment = alin_esquerda
@@ -1418,7 +1672,11 @@ def importar_produtos():
             ws.append([])
             ws.append(["🔎 Resumo de Duplicados - Explicação Simples"])
             ws["A" + str(ws.max_row)].font = fonte_secao
-            ws.append(["Aqui listamos os duplicados detectados e uma explicação clara do que fazer."])
+            ws.append(
+                [
+                    "Aqui listamos os duplicados detectados e uma explicação clara do que fazer."
+                ]
+            )
 
             if duplicados_internos:
                 dup_by_name = {}
@@ -1427,16 +1685,31 @@ def importar_produtos():
                     dup_by_name.setdefault(nome, []).append(d)
 
                 for nome, items in dup_by_name.items():
-                    linhas = sorted(set([
-                        it.get("linha_duplicada") for it in items
-                    ] + [
-                        it.get("primeira_ocorrencia") for it in items if it.get("primeira_ocorrencia")
-                    ]))
+                    linhas = sorted(
+                        set(
+                            [it.get("linha_duplicada") for it in items]
+                            + [
+                                it.get("primeira_ocorrencia")
+                                for it in items
+                                if it.get("primeira_ocorrencia")
+                            ]
+                        )
+                    )
                     linhas = [str(x) for x in linhas if x]
 
-                    ws.append([f"Produto: {nome} → Linhas envolvidas: {', '.join(linhas)}"])
-                    ws.append(["  O que significa: Esse nome apareceu mais de uma vez. Verifique marcas e preços."])
-                    ws.append(["  Como resolver: mantenha a linha correta e corrija/remova as demais."])
+                    ws.append(
+                        [f"Produto: {nome} → Linhas envolvidas: {', '.join(linhas)}"]
+                    )
+                    ws.append(
+                        [
+                            "  O que significa: Esse nome apareceu mais de uma vez. Verifique marcas e preços."
+                        ]
+                    )
+                    ws.append(
+                        [
+                            "  Como resolver: mantenha a linha correta e corrija/remova as demais."
+                        ]
+                    )
             else:
                 ws.append(["Nenhum duplicado interno detalhado."])
 
@@ -1451,9 +1724,21 @@ def importar_produtos():
         # ===== Produtos importados =====
         ws.append(["✅ Produtos Importados com Sucesso"])
         ws["A" + str(ws.max_row)].font = fonte_secao
-        ws["A" + str(ws.max_row)].fill = PatternFill(start_color=cor_sucesso, end_color=cor_sucesso, fill_type="solid")
+        ws["A" + str(ws.max_row)].fill = PatternFill(
+            start_color=cor_sucesso, end_color=cor_sucesso, fill_type="solid"
+        )
 
-        ws.append(["Nome", "Preço (texto original)", "Preço (valor)", "Categoria", "Marca", "Descrição", "Situação"])
+        ws.append(
+            [
+                "Nome",
+                "Preço (texto original)",
+                "Preço (valor)",
+                "Categoria",
+                "Marca",
+                "Descrição",
+                "Situação",
+            ]
+        )
         for c in ws[ws.max_row]:
             c.font = fonte_header
             c.alignment = alin_centro
@@ -1484,15 +1769,17 @@ def importar_produtos():
             if faltando:
                 situacao = f"⚠️ Adicione {', '.join(faltando)} depois."
 
-            ws.append([
-                nome,
-                preco_texto or "(não disponível)",
-                preco_val if preco_val is not None else "(não convertido)",
-                p.get("categoria") or "(vazio)",
-                p.get("marca") or "(vazio)",
-                p.get("descricao") or "(sem descrição)",
-                situacao
-            ])
+            ws.append(
+                [
+                    nome,
+                    preco_texto or "(não disponível)",
+                    preco_val if preco_val is not None else "(não convertido)",
+                    p.get("categoria") or "(vazio)",
+                    p.get("marca") or "(vazio)",
+                    p.get("descricao") or "(sem descrição)",
+                    situacao,
+                ]
+            )
 
             for c in ws[ws.max_row]:
                 c.font = fonte_normal
@@ -1503,18 +1790,20 @@ def importar_produtos():
         if duplicados_internos:
             ws_dup = wb.create_sheet("Produtos Duplicados")
 
-            ws_dup.append([
-                "Linha (duplicada)",
-                "Nome (duplicada)",
-                "Marca (duplicada)",
-                "Primeira ocorrência (linha)",
-                "Nome (primeira)",
-                "Marca (primeira)",
-                "Categoria (primeira)",
-                "Preço (texto primeira)",
-                "Preço (valor primeira)",
-                "Descrição (primeira)"
-            ])
+            ws_dup.append(
+                [
+                    "Linha (duplicada)",
+                    "Nome (duplicada)",
+                    "Marca (duplicada)",
+                    "Primeira ocorrência (linha)",
+                    "Nome (primeira)",
+                    "Marca (primeira)",
+                    "Categoria (primeira)",
+                    "Preço (texto primeira)",
+                    "Preço (valor primeira)",
+                    "Descrição (primeira)",
+                ]
+            )
 
             for c in ws_dup[ws_dup.max_row]:
                 c.font = fonte_header
@@ -1528,7 +1817,9 @@ def importar_produtos():
                 primeira_linha = d.get("primeira_ocorrencia")
 
                 nome_norm = normalizar_texto(nome_dup)
-                marca_norm = normalizar_texto("" if marca_dup == "(vazio)" else marca_dup)
+                marca_norm = normalizar_texto(
+                    "" if marca_dup == "(vazio)" else marca_dup
+                )
 
                 chave_primeira = None
                 if (nome_norm, marca_norm) in primeira_ocorrencia_info:
@@ -1541,18 +1832,20 @@ def importar_produtos():
 
                 dados_primeira = primeira_ocorrencia_info.get(chave_primeira, {})
 
-                ws_dup.append([
-                    linha_dup,
-                    nome_dup,
-                    marca_dup,
-                    primeira_linha or "",
-                    dados_primeira.get("nome", ""),
-                    dados_primeira.get("marca", ""),
-                    dados_primeira.get("categoria", ""),
-                    dados_primeira.get("preco_texto", ""),
-                    dados_primeira.get("preco", ""),
-                    dados_primeira.get("descricao", "")
-                ])
+                ws_dup.append(
+                    [
+                        linha_dup,
+                        nome_dup,
+                        marca_dup,
+                        primeira_linha or "",
+                        dados_primeira.get("nome", ""),
+                        dados_primeira.get("marca", ""),
+                        dados_primeira.get("categoria", ""),
+                        dados_primeira.get("preco_texto", ""),
+                        dados_primeira.get("preco", ""),
+                        dados_primeira.get("descricao", ""),
+                    ]
+                )
 
                 for c in ws_dup[ws_dup.max_row]:
                     c.font = fonte_normal
@@ -1585,7 +1878,7 @@ def importar_produtos():
             "4) Em 'Produtos Duplicados' compare linhas disputadas.",
             "5) Preços: o relatório mantém o valor textual original.",
             "6) Se um preço vier '299', confirme se é 299 ou 2,99.",
-            "7) Se houver marca vazia, preencha com 'SEM MARCA' ou a correta."
+            "7) Se houver marca vazia, preencha com 'SEM MARCA' ou a correta.",
         ]
         for l in guia:
             ws_dicas.append([l])
@@ -1597,7 +1890,7 @@ def importar_produtos():
             "✓ Cada produto tem NOME.",
             "✓ Preço preenchido.",
             "✓ Marca preenchida quando possível.",
-            "✓ Arquivo salvo em .xlsx ou .csv (UTF-8)."
+            "✓ Arquivo salvo em .xlsx ou .csv (UTF-8).",
         ]
         for c in checklist:
             ws_dicas.append([c])
@@ -1605,21 +1898,27 @@ def importar_produtos():
         for sheet in [ws]:
             for i, col in enumerate(sheet.columns, start=1):
                 max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
-                sheet.column_dimensions[get_column_letter(i)].width = min(max_len + 4, 120)
+                sheet.column_dimensions[get_column_letter(i)].width = min(
+                    max_len + 4, 120
+                )
 
-        if 'ws_dicas' in locals():
+        if "ws_dicas" in locals():
             for i, col in enumerate(ws_dicas.columns, start=1):
                 max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
-                ws_dicas.column_dimensions[get_column_letter(i)].width = min(max_len + 4, 120)
+                ws_dicas.column_dimensions[get_column_letter(i)].width = min(
+                    max_len + 4, 120
+                )
 
-        if 'ws_dup' in locals():
+        if "ws_dup" in locals():
             for i, col in enumerate(ws_dup.columns, start=1):
                 max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
-                ws_dup.column_dimensions[get_column_letter(i)].width = min(max_len + 4, 120)
+                ws_dup.column_dimensions[get_column_letter(i)].width = min(
+                    max_len + 4, 120
+                )
 
         output = os.path.join(
             "static/relatorios",
-            f"Relatorio_Importacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            f"Relatorio_Importacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
         )
         os.makedirs(os.path.dirname(output), exist_ok=True)
         wb.save(output)
@@ -1628,7 +1927,7 @@ def importar_produtos():
             output,
             as_attachment=True,
             download_name="Relatorio_Importacao.xlsx",
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     except Exception as e:
@@ -1647,8 +1946,6 @@ def importar_produtos():
             os.remove(caminho_temp)
 
 
-
-
 # -----------------------------
 # Deletar múltiplos produtos selecionados
 # -----------------------------
@@ -1665,32 +1962,45 @@ def deletar_selecionados():
         data = request.get_json(force=True) or {}
         ids = data.get("ids", [])
         if not isinstance(ids, list) or not ids:
-            return jsonify({"sucesso": False, "erro": "Envie uma lista válida de IDs."}), 400
+            return (
+                jsonify({"sucesso": False, "erro": "Envie uma lista válida de IDs."}),
+                400,
+            )
 
-        ids_validos = list({str(i).strip() for i in ids if isinstance(i, str) and i.strip()})
+        ids_validos = list(
+            {str(i).strip() for i in ids if isinstance(i, str) and i.strip()}
+        )
         if not ids_validos:
-            return jsonify({"sucesso": False, "erro": "Nenhum ID válido fornecido."}), 400
+            return (
+                jsonify({"sucesso": False, "erro": "Nenhum ID válido fornecido."}),
+                400,
+            )
 
         comerciante_id = session.get("comerciante_id")
         if not comerciante_id:
             return jsonify({"sucesso": False, "erro": "Sessão expirada."}), 401
 
         # Buscar produtos existentes com imagens
-        existentes = supabase.table("produtos") \
-            .select("id, imagem") \
-            .in_("id", ids_validos) \
-            .eq("comerciante_id", comerciante_id) \
+        existentes = (
+            supabase.table("produtos")
+            .select("id, imagem")
+            .in_("id", ids_validos)
+            .eq("comerciante_id", comerciante_id)
             .execute()
+        )
 
         produtos_existentes = existentes.data or []
         if not produtos_existentes:
-            return jsonify({"sucesso": False, "erro": "Nenhum produto encontrado."}), 404
+            return (
+                jsonify({"sucesso": False, "erro": "Nenhum produto encontrado."}),
+                404,
+            )
 
         total_excluidos = 0
         lotes_falhos = []
 
         for i in range(0, len(produtos_existentes), BLOCO):
-            lote = produtos_existentes[i:i+BLOCO]
+            lote = produtos_existentes[i : i + BLOCO]
 
             # 🔹 Excluir imagens do Supabase
             for p in lote:
@@ -1706,11 +2016,9 @@ def deletar_selecionados():
             # 🔹 Excluir produtos do banco
             for tentativa in range(1, MAX_RETRIES + 1):
                 try:
-                    supabase.table("produtos") \
-                        .delete() \
-                        .in_("id", [p["id"] for p in lote]) \
-                        .eq("comerciante_id", comerciante_id) \
-                        .execute()
+                    supabase.table("produtos").delete().in_(
+                        "id", [p["id"] for p in lote]
+                    ).eq("comerciante_id", comerciante_id).execute()
                     total_excluidos += len(lote)
                     print(f"Lote {i//BLOCO + 1} excluído com sucesso.")
                     break
@@ -1723,17 +2031,26 @@ def deletar_selecionados():
 
             time.sleep(0.01)
 
-        return jsonify({
-            "sucesso": True,
-            "mensagem": f"{total_excluidos} produto(s) excluído(s) com sucesso.",
-            "lotes_falhos": lotes_falhos
-        }), 200
+        return (
+            jsonify(
+                {
+                    "sucesso": True,
+                    "mensagem": f"{total_excluidos} produto(s) excluído(s) com sucesso.",
+                    "lotes_falhos": lotes_falhos,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         print("❌ Erro ao deletar produtos:", str(e))
         traceback.print_exc()
-        return jsonify({"sucesso": False, "erro": "Erro interno ao processar a exclusão."}), 500
-
+        return (
+            jsonify(
+                {"sucesso": False, "erro": "Erro interno ao processar a exclusão."}
+            ),
+            500,
+        )
 
 
 @comerciante_bp.route("/api/produtos/atualizar", methods=["POST"])
@@ -1758,7 +2075,10 @@ def atualizar_produtos():
 
         arquivo = request.files["arquivo"]
         if arquivo.filename == "":
-            return jsonify({"sucesso": False, "erro": "Nenhum arquivo selecionado."}), 400
+            return (
+                jsonify({"sucesso": False, "erro": "Nenhum arquivo selecionado."}),
+                400,
+            )
 
         filename = secure_filename(arquivo.filename)
         extensao = filename.lower().split(".")[-1]
@@ -1813,7 +2133,9 @@ def atualizar_produtos():
             else:
                 linhas = [
                     l.strip()
-                    for l in open(caminho_temp, encoding=encoding, errors="ignore").readlines()
+                    for l in open(
+                        caminho_temp, encoding=encoding, errors="ignore"
+                    ).readlines()
                     if l.strip()
                 ]
                 df = pd.DataFrame({"linha": linhas})
@@ -1822,7 +2144,15 @@ def atualizar_produtos():
             df = pd.read_excel(caminho_temp, engine="odf")
 
         else:
-            return jsonify({"sucesso": False, "erro": f"Formato de arquivo não suportado: .{extensao}"}), 400
+            return (
+                jsonify(
+                    {
+                        "sucesso": False,
+                        "erro": f"Formato de arquivo não suportado: .{extensao}",
+                    }
+                ),
+                400,
+            )
 
         if df.empty:
             return jsonify({"sucesso": False, "erro": "Arquivo vazio."}), 400
@@ -1830,7 +2160,11 @@ def atualizar_produtos():
         # ===================== Normalização =====================
         def normalizar_coluna(c):
             c = str(c).strip().lower()
-            c = unicodedata.normalize("NFKD", c).encode("ASCII", "ignore").decode("utf-8")
+            c = (
+                unicodedata.normalize("NFKD", c)
+                .encode("ASCII", "ignore")
+                .decode("utf-8")
+            )
             return c
 
         df.columns = [normalizar_coluna(c) for c in df.columns]
@@ -1843,7 +2177,12 @@ def atualizar_produtos():
         erros = []
 
         # ===================== Produtos existentes =====================
-        resp = supabase.table("produtos").select("*").eq("comerciante_id", comerciante_id).execute()
+        resp = (
+            supabase.table("produtos")
+            .select("*")
+            .eq("comerciante_id", comerciante_id)
+            .execute()
+        )
         produtos_existentes = {p["nome"].strip().lower(): p for p in (resp.data or [])}
 
         # ===================== Função imagem =====================
@@ -1869,62 +2208,91 @@ def atualizar_produtos():
                 nome = str(row.get("nome", "")).strip()
 
                 if not nome:
-                    erros.append({
-                        "linha": linha,
-                        "erro": "Nome ausente. Produto não identificado.",
-                        "instrucao": "Preencha o campo 'nome'."
-                    })
+                    erros.append(
+                        {
+                            "linha": linha,
+                            "erro": "Nome ausente. Produto não identificado.",
+                            "instrucao": "Preencha o campo 'nome'.",
+                        }
+                    )
                     continue
 
                 nome_key = nome.lower()
 
                 if nome_key not in produtos_existentes:
-                    erros.append({
-                        "linha": linha,
-                        "erro": f"Produto '{nome}' não encontrado no sistema.",
-                        "instrucao": "Verifique se o nome está correto ou se já existe no sistema."
-                    })
+                    erros.append(
+                        {
+                            "linha": linha,
+                            "erro": f"Produto '{nome}' não encontrado no sistema.",
+                            "instrucao": "Verifique se o nome está correto ou se já existe no sistema.",
+                        }
+                    )
                     continue
 
                 produto = produtos_existentes[nome_key]
 
-                preco_raw = str(row.get("preco", "")).replace("R$", "").replace(",", ".").strip()
+                preco_raw = (
+                    str(row.get("preco", ""))
+                    .replace("R$", "")
+                    .replace(",", ".")
+                    .strip()
+                )
 
                 try:
-                    preco = float(preco_raw) if preco_raw not in ["", "nan", "None"] else produto.get("preco", 0.0)
+                    preco = (
+                        float(preco_raw)
+                        if preco_raw not in ["", "nan", "None"]
+                        else produto.get("preco", 0.0)
+                    )
                 except ValueError:
                     preco = produto.get("preco", 0.0)
-                    erros.append({
-                        "linha": linha,
-                        "erro": f"Preço inválido '{row.get('preco', '')}'. Mantido valor anterior.",
-                        "instrucao": "Corrija o formato do preço (ex: 10.99)."
-                    })
+                    erros.append(
+                        {
+                            "linha": linha,
+                            "erro": f"Preço inválido '{row.get('preco', '')}'. Mantido valor anterior.",
+                            "instrucao": "Corrija o formato do preço (ex: 10.99).",
+                        }
+                    )
 
                 dados_atualizados = {
                     "preco": preco,
-                    "descricao": str(row.get("descricao", produto.get("descricao", "")) or "").strip(),
-                    "categoria": str(row.get("categoria", produto.get("categoria", "")) or "").strip(),
-                    "marca": str(row.get("marca", produto.get("marca", "")) or "").strip(),
-                    "imagem": processar_imagem(row.get("imagem", produto.get("imagem", imagem_padrao))),
-                    "atualizado_em": datetime.utcnow().isoformat()
+                    "descricao": str(
+                        row.get("descricao", produto.get("descricao", "")) or ""
+                    ).strip(),
+                    "categoria": str(
+                        row.get("categoria", produto.get("categoria", "")) or ""
+                    ).strip(),
+                    "marca": str(
+                        row.get("marca", produto.get("marca", "")) or ""
+                    ).strip(),
+                    "imagem": processar_imagem(
+                        row.get("imagem", produto.get("imagem", imagem_padrao))
+                    ),
+                    "atualizado_em": datetime.utcnow().isoformat(),
                 }
 
-                supabase.table("produtos").update(dados_atualizados).eq("id", produto["id"]).execute()
+                supabase.table("produtos").update(dados_atualizados).eq(
+                    "id", produto["id"]
+                ).execute()
 
-                produtos_atualizados.append({
-                    "nome": nome,
-                    "preco_antigo": produto.get("preco", ""),
-                    "preco_novo": preco,
-                    "categoria": dados_atualizados["categoria"],
-                    "marca": dados_atualizados["marca"]
-                })
+                produtos_atualizados.append(
+                    {
+                        "nome": nome,
+                        "preco_antigo": produto.get("preco", ""),
+                        "preco_novo": preco,
+                        "categoria": dados_atualizados["categoria"],
+                        "marca": dados_atualizados["marca"],
+                    }
+                )
 
             except Exception as e:
-                erros.append({
-                    "linha": linha,
-                    "erro": f"Erro inesperado: {str(e)}",
-                    "instrucao": "Verifique os dados e tente novamente."
-                })
+                erros.append(
+                    {
+                        "linha": linha,
+                        "erro": f"Erro inesperado: {str(e)}",
+                        "instrucao": "Verifique os dados e tente novamente.",
+                    }
+                )
 
         # =====================================================================
         #   RELATÓRIO EXCEL PADRONIZADO (USANDO O MODELO DE IMPORTAÇÃO)
@@ -1954,7 +2322,7 @@ def atualizar_produtos():
             left=Side(style="thin", color="999999"),
             right=Side(style="thin", color="999999"),
             top=Side(style="thin", color="999999"),
-            bottom=Side(style="thin", color="999999")
+            bottom=Side(style="thin", color="999999"),
         )
 
         # limpa sheet inicial (garantir vazia)
@@ -1965,10 +2333,14 @@ def atualizar_produtos():
 
         # título semelhante ao modelo de importação, porém adaptado
         ws.merge_cells("A1:G1")
-        ws["A1"].value = "Relatório Analítico de Atualização de Produtos - 🔁 Preço Mais Barato"
+        ws["A1"].value = (
+            "Relatório Analítico de Atualização de Produtos - 🔁 Preço Mais Barato"
+        )
         ws["A1"].font = fonte_titulo
         ws["A1"].alignment = alin_centro
-        ws["A1"].fill = PatternFill(start_color=cor_titulo, end_color=cor_titulo, fill_type="solid")
+        ws["A1"].fill = PatternFill(
+            start_color=cor_titulo, end_color=cor_titulo, fill_type="solid"
+        )
         ws.row_dimensions[1].height = 26
 
         # === CABEÇALHO VERTICAL ===
@@ -1977,7 +2349,7 @@ def atualizar_produtos():
             "Tipo de operação": "ATUALIZAÇÃO DE PRODUTOS",
             "Sistema": "Preço Mais Barato - Núcleo de Inteligência",
             "Versão do motor": "2.3.1",
-            "Relatório": "Relatório Analítico de Atualização de Produtos"
+            "Relatório": "Relatório Analítico de Atualização de Produtos",
         }
         for k, v in cab.items():
             ws.append([k, v])
@@ -1989,7 +2361,9 @@ def atualizar_produtos():
         # ===== Resumo =====
         ws.append(["Resumo da Atualização"])
         ws["A" + str(ws.max_row)].font = fonte_secao
-        ws["A" + str(ws.max_row)].fill = PatternFill(start_color=cor_secao, end_color=cor_secao, fill_type="solid")
+        ws["A" + str(ws.max_row)].fill = PatternFill(
+            start_color=cor_secao, end_color=cor_secao, fill_type="solid"
+        )
 
         ws.append(["Total de linhas", "Atualizados", "Com Erro", "Com Aviso"])
         for c in ws[ws.max_row]:
@@ -1998,14 +2372,22 @@ def atualizar_produtos():
             c.border = borda
 
         # contagem de avisos se houver campo 'tipo' == 'aviso' em erros; caso contrário 0
-        avisos_count = len([e for e in erros if e.get("tipo") == "aviso"]) if erros else 0
+        avisos_count = (
+            len([e for e in erros if e.get("tipo") == "aviso"]) if erros else 0
+        )
 
-        ws.append([
-            len(df),
-            len(produtos_atualizados),
-            len([e for e in erros if e.get("tipo") == "erro"]) if erros else len(erros),
-            avisos_count
-        ])
+        ws.append(
+            [
+                len(df),
+                len(produtos_atualizados),
+                (
+                    len([e for e in erros if e.get("tipo") == "erro"])
+                    if erros
+                    else len(erros)
+                ),
+                avisos_count,
+            ]
+        )
         for c in ws[ws.max_row]:
             c.alignment = alin_centro
             c.border = borda
@@ -2015,14 +2397,27 @@ def atualizar_produtos():
         # ===== Produtos com Erro / Avisos =====
         ws.append(["⚠️ Produtos com Erro / Avisos (Simples ➜ Solução)"])
         ws["A" + str(ws.max_row)].font = fonte_secao
-        ws["A" + str(ws.max_row)].fill = PatternFill(start_color=cor_secao, end_color=cor_secao, fill_type="solid")
+        ws["A" + str(ws.max_row)].fill = PatternFill(
+            start_color=cor_secao, end_color=cor_secao, fill_type="solid"
+        )
 
         if erros:
-            ws.append(["Linha", "O que aconteceu (simples)", "O que fazer (simples)", "Análise técnica (código)"])
+            ws.append(
+                [
+                    "Linha",
+                    "O que aconteceu (simples)",
+                    "O que fazer (simples)",
+                    "Análise técnica (código)",
+                ]
+            )
             for cell in ws[ws.max_row]:
                 cell.font = Font(bold=True, color="FFFFFF")
                 cell.alignment = alin_centro
-                cell.fill = PatternFill(start_color=cor_erro_header, end_color=cor_erro_header, fill_type="solid")
+                cell.fill = PatternFill(
+                    start_color=cor_erro_header,
+                    end_color=cor_erro_header,
+                    fill_type="solid",
+                )
                 cell.border = borda
 
             # agrupar erros por linha
@@ -2046,17 +2441,31 @@ def atualizar_produtos():
 
                 if "preço ausente" in lower_msg or "preço inválido" in lower_msg:
                     instrucoes.append("Preencha o PREÇO (ex.: 2,99 ou 299).")
-                    instr_tecnica.append(("E-03", "Preço ausente/inválido: impede atualização."))
+                    instr_tecnica.append(
+                        ("E-03", "Preço ausente/inválido: impede atualização.")
+                    )
 
-                if "não encontrado" in lower_msg or "produto" in lower_msg and "não encontrado" in lower_msg:
-                    instrucoes.append("Verifique se o NOME está correto ou se o produto existe no sistema.")
-                    instr_tecnica.append(("E-05", "Produto não localizado: não existe para atualizar."))
+                if (
+                    "não encontrado" in lower_msg
+                    or "produto" in lower_msg
+                    and "não encontrado" in lower_msg
+                ):
+                    instrucoes.append(
+                        "Verifique se o NOME está correto ou se o produto existe no sistema."
+                    )
+                    instr_tecnica.append(
+                        ("E-05", "Produto não localizado: não existe para atualizar.")
+                    )
 
                 if not instrucoes:
                     instrucoes.append("Corrija os campos indicados e tente novamente.")
-                    instr_tecnica.append(("E-00", "Erro genérico: verificar manualmente."))
+                    instr_tecnica.append(
+                        ("E-00", "Erro genérico: verificar manualmente.")
+                    )
 
-                return " ".join(instrucoes), " | ".join([f"{c}: {d}" for c, d in instr_tecnica])
+                return " ".join(instrucoes), " | ".join(
+                    [f"{c}: {d}" for c, d in instr_tecnica]
+                )
 
             for linha_idx in sorted(erros_por_linha.keys()):
                 mensagens = erros_por_linha[linha_idx]
@@ -2066,9 +2475,13 @@ def atualizar_produtos():
                 ws.append([linha_idx, joined_msg, instr_simples, instr_tecnica])
                 last_row = ws.max_row
 
-                fill = PatternFill(start_color=cor_erro, end_color=cor_erro, fill_type="solid")
+                fill = PatternFill(
+                    start_color=cor_erro, end_color=cor_erro, fill_type="solid"
+                )
                 if "marca ausente" in joined_msg.lower():
-                    fill = PatternFill(start_color=cor_aviso, end_color=cor_aviso, fill_type="solid")
+                    fill = PatternFill(
+                        start_color=cor_aviso, end_color=cor_aviso, fill_type="solid"
+                    )
 
                 for cell in ws[last_row]:
                     cell.alignment = alin_esquerda
@@ -2088,23 +2501,29 @@ def atualizar_produtos():
         # ===== Produtos Atualizados com Sucesso =====
         ws.append(["✅ Produtos Atualizados com Sucesso"])
         ws["A" + str(ws.max_row)].font = fonte_secao
-        ws["A" + str(ws.max_row)].fill = PatternFill(start_color=cor_sucesso, end_color=cor_sucesso, fill_type="solid")
+        ws["A" + str(ws.max_row)].fill = PatternFill(
+            start_color=cor_sucesso, end_color=cor_sucesso, fill_type="solid"
+        )
 
-        ws.append(["Nome", "Preço Anterior", "Novo Preço", "Categoria", "Marca", "Situação"])
+        ws.append(
+            ["Nome", "Preço Anterior", "Novo Preço", "Categoria", "Marca", "Situação"]
+        )
         for c in ws[ws.max_row]:
             c.font = fonte_header
             c.alignment = alin_centro
             c.border = borda
 
         for p in produtos_atualizados:
-            ws.append([
-                p.get("nome", ""),
-                p.get("preco_antigo", ""),
-                p.get("preco_novo", ""),
-                p.get("categoria", "(vazio)"),
-                p.get("marca", "(vazio)"),
-                "Atualizado"
-            ])
+            ws.append(
+                [
+                    p.get("nome", ""),
+                    p.get("preco_antigo", ""),
+                    p.get("preco_novo", ""),
+                    p.get("categoria", "(vazio)"),
+                    p.get("marca", "(vazio)"),
+                    "Atualizado",
+                ]
+            )
             for c in ws[ws.max_row]:
                 c.font = fonte_normal
                 c.alignment = alin_esquerda
@@ -2122,7 +2541,7 @@ def atualizar_produtos():
             "4) Se houve 'Produto não encontrado', corrija o nome no sistema e tente novamente.",
             "5) Preços: o relatório mantém o valor textual original quando disponível.",
             "6) Se um preço vier '299', confirme se é 299 ou 2,99.",
-            "7) Se houver marca vazia, preencha com 'SEM MARCA' ou a correta."
+            "7) Se houver marca vazia, preencha com 'SEM MARCA' ou a correta.",
         ]
         for l in guia:
             ws_dicas.append([l])
@@ -2133,7 +2552,7 @@ def atualizar_produtos():
             "✓ Cada produto tem NOME.",
             "✓ Preço preenchido quando for alterar.",
             "✓ Marca preenchida quando possível.",
-            "✓ Arquivo salvo em .xlsx ou .csv (UTF-8)."
+            "✓ Arquivo salvo em .xlsx ou .csv (UTF-8).",
         ]
         for c in checklist:
             ws_dicas.append([c])
@@ -2142,10 +2561,14 @@ def atualizar_produtos():
         for sheet in [ws, ws_dicas]:
             for i, col in enumerate(sheet.columns, start=1):
                 try:
-                    max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
+                    max_len = max(
+                        len(str(cell.value)) if cell.value else 0 for cell in col
+                    )
                 except Exception:
                     max_len = 0
-                sheet.column_dimensions[get_column_letter(i)].width = min(max_len + 4, 120)
+                sheet.column_dimensions[get_column_letter(i)].width = min(
+                    max_len + 4, 120
+                )
 
         # salvar em memória e enviar (BytesIO)
         output = io.BytesIO()
@@ -2153,18 +2576,23 @@ def atualizar_produtos():
         wb.close()
         output.seek(0)
 
-        nome_arquivo = f"Relatorio_Atualizacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        nome_arquivo = (
+            f"Relatorio_Atualizacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        )
 
         return send_file(
             output,
             as_attachment=True,
             download_name=nome_arquivo,
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     except Exception as e:
         # não imprimir stacktrace aqui para não sujar a resposta binária
-        return jsonify({"sucesso": False, "erro": "Erro interno ao processar o arquivo."}), 500
+        return (
+            jsonify({"sucesso": False, "erro": "Erro interno ao processar o arquivo."}),
+            500,
+        )
 
     finally:
         if caminho_temp and os.path.exists(caminho_temp):
@@ -2174,7 +2602,6 @@ def atualizar_produtos():
                 pass
 
 
-            
 @comerciante_bp.route("/api/upload", methods=["POST"])
 @login_required
 def api_upload_imagem():
@@ -2211,7 +2638,7 @@ def api_upload_imagem():
         resultado = supabase.storage.from_("produtos").upload(
             nome_arquivo,
             conteudo,
-            {"content-type": file.content_type}  # garante o tipo correto
+            {"content-type": file.content_type},  # garante o tipo correto
         )
 
         if "error" in str(resultado).lower():
@@ -2222,18 +2649,14 @@ def api_upload_imagem():
         url_publica = supabase.storage.from_("produtos").get_public_url(nome_arquivo)
         print("✅ Upload concluído. URL pública:", url_publica)
 
-        return jsonify({
-            "sucesso": True,
-            "url": url_publica,
-            "arquivo": nome_arquivo
-        })
+        return jsonify({"sucesso": True, "url": url_publica, "arquivo": nome_arquivo})
 
     except Exception as e:
         print("🔥 EXCEÇÃO:", str(e))
         traceback.print_exc()
         return jsonify({"erro": str(e)}), 500
-    
-    
+
+
 @comerciante_bp.route("/api/produtos/upload_imagem", methods=["POST"])
 @login_required
 def upload_imagem_produto():
@@ -2250,22 +2673,24 @@ def upload_imagem_produto():
         # 2) SE FOR URL — RETORNA DIRETO
         # ===========================================================
         if imagem_valor.startswith("http://") or imagem_valor.startswith("https://"):
-            return jsonify({
-                "sucesso": True,
-                "origem": "url",
-                "url_final": imagem_valor
-            })
+            return jsonify(
+                {"sucesso": True, "origem": "url", "url_final": imagem_valor}
+            )
 
         # ===========================================================
         # 3) SE FOR NOME DE ARQUIVO LOCAL — JÁ EXISTE NO SUPABASE
         # ===========================================================
-        if imagem_valor.endswith(".jpg") or imagem_valor.endswith(".png") or imagem_valor.endswith(".jpeg"):
-            url_publica = supabase.storage.from_("produtos").get_public_url(imagem_valor)
-            return jsonify({
-                "sucesso": True,
-                "origem": "nome_existente",
-                "url_final": url_publica
-            })
+        if (
+            imagem_valor.endswith(".jpg")
+            or imagem_valor.endswith(".png")
+            or imagem_valor.endswith(".jpeg")
+        ):
+            url_publica = supabase.storage.from_("produtos").get_public_url(
+                imagem_valor
+            )
+            return jsonify(
+                {"sucesso": True, "origem": "nome_existente", "url_final": url_publica}
+            )
 
         # ===========================================================
         # 4) SE FOR UPLOAD REAL - “file”
@@ -2273,10 +2698,12 @@ def upload_imagem_produto():
         arquivo = request.files.get("file")
 
         if not arquivo:
-            return jsonify({
-                "sucesso": False,
-                "erro": "Nenhuma imagem enviada (campo 'file')."
-            }), 400
+            return (
+                jsonify(
+                    {"sucesso": False, "erro": "Nenhuma imagem enviada (campo 'file')."}
+                ),
+                400,
+            )
 
         # Lê o conteúdo binário
         conteudo = arquivo.read()
@@ -2290,30 +2717,32 @@ def upload_imagem_produto():
 
         # Upload com MIME-type correto
         resultado = supabase.storage.from_("produtos").upload(
-            nome_arquivo,
-            conteudo,
-            {"content-type": arquivo.content_type}
+            nome_arquivo, conteudo, {"content-type": arquivo.content_type}
         )
 
         if "error" in str(resultado).lower():
-            return jsonify({"sucesso": False, "erro": "Falha ao enviar imagem ao Storage."}), 500
+            return (
+                jsonify(
+                    {"sucesso": False, "erro": "Falha ao enviar imagem ao Storage."}
+                ),
+                500,
+            )
 
         # Pega URL pública
         url_publica = supabase.storage.from_("produtos").get_public_url(nome_arquivo)
 
-        return jsonify({
-            "sucesso": True,
-            "origem": "upload",
-            "url_final": url_publica,
-            "arquivo": nome_arquivo
-        })
+        return jsonify(
+            {
+                "sucesso": True,
+                "origem": "upload",
+                "url_final": url_publica,
+                "arquivo": nome_arquivo,
+            }
+        )
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({
-            "sucesso": False,
-            "erro": str(e)
-        }), 500
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
 def upload_foto_comerciante(file):
@@ -2331,9 +2760,7 @@ def upload_foto_comerciante(file):
 
     # Upload para o bucket
     res = supabase.storage.from_("comerciante").upload(
-        caminho_supabase,
-        file_bytes,
-        {"content-type": file.content_type}
+        caminho_supabase, file_bytes, {"content-type": file.content_type}
     )
 
     if res is None:

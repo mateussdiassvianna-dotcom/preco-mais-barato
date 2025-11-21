@@ -2,6 +2,8 @@ from flask import Flask
 from supabase import create_client
 from flask_mail import Mail
 from extensions import db
+from dotenv import load_dotenv
+import os
 
 # === BLUEPRINTS ===
 from routes.index import index_bp
@@ -9,10 +11,15 @@ from routes.admin import admin_bp
 from routes.consumidor import consumidor_bp
 from routes.comerciante import comerciante_bp
 
-# === CONFIGURAÇÃO SUPABASE ===
-SUPABASE_URL = "https://fzlxteusmakgjmurtrur.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bHh0ZXVzbWFrZ2ptdXJ0cnVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MTM0MzQsImV4cCI6MjA3NDE4OTQzNH0.NRrhJYRJmboCmBtUfgx4nSUW2b_7PAB8Qg6hYM0jjjU"
+# === Carrega variáveis do .env ===
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# === Cria app Flask ===
+app = Flask(__name__)
+# ... suas outras configs, blueprints e inicializações
 
 
 def create_app():
